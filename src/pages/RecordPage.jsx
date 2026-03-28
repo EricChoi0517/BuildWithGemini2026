@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { saveJournalFromText } from '@/lib/saveJournalFromText';
 import Waveform from '@/components/Waveform';
 import MoodDot, { formatMoodLabel } from '@/components/MoodDot';
+import EmotionBars from '@/components/EmotionBars';
 
 const PROMPTS = [
   'Tell me about the best part of your day so far.',
@@ -64,29 +65,33 @@ export default function RecordPage() {
   const progress = elapsed / maxDuration;
 
   function handleStart() {
-    setPrompt(PROMPTS[Math.floor(Math.random() * PROMPTS.length)]);
-    startRecording();
+    const p = PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
+    setPrompt(p);
+    startRecording({ journalPrompt: p });
   }
 
   return (
-    <div className="pt-8 pb-4 flex flex-col items-center min-h-[calc(100vh-120px)]">
+    <div className="pb-4 flex flex-col items-center">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="text-center mb-8"
+        className="text-center mb-4"
       >
         <h1 className="font-display text-2xl text-echo-text text-center">
           {state === 'idle' && 'Ready to record'}
           {state === 'recording' && 'Listening...'}
           {state === 'processing' && 'Processing...'}
-          {state === 'done' && 'Entry saved'}
+          {state === 'done' && ''}
           {state === 'error' && 'Something went wrong'}
         </h1>
         {state === 'idle' && (
           <div className="mt-3 space-y-2 max-w-sm mx-auto">
             <p className="text-echo-text-muted text-sm">
               Tap the mic to start. 30 seconds max.
+            </p>
+            <p className="text-echo-text-dim text-xs max-w-sm mx-auto">
+              The prompt is optional—go off-topic if you want. We note when speech doesn&apos;t match the prompt so insights stay honest.
             </p>
             <label className="flex items-start gap-3 cursor-pointer text-left px-1">
               <input
@@ -137,38 +142,39 @@ export default function RecordPage() {
         </motion.div>
       )}
 
-      {/* Waveform */}
-      <div className="w-full mb-8">
-        <Waveform
-          data={waveformData}
-          isRecording={state === 'recording'}
-        />
-      </div>
+      {/* Waveform — hide after save to make room for result card */}
+      {state !== 'done' && state !== 'error' && (
+        <div className="w-full mb-4">
+          <Waveform
+            data={waveformData}
+            isRecording={state === 'recording'}
+          />
+        </div>
+      )}
 
-      {/* Timer Ring */}
-      <div className="relative mb-8">
-        <svg width="160" height="160" viewBox="0 0 160 160" className="-rotate-90">
+      {/* Timer Ring — hide after save */}
+      {state !== 'done' && state !== 'error' && (
+      <div className="relative mb-4">
+        <svg width="120" height="120" viewBox="0 0 120 120" className="-rotate-90">
           {/* Background ring */}
           <circle
-            cx="80" cy="80" r="72"
+            cx="60" cy="60" r="52"
             fill="none"
             stroke="#DDD8F0"
             strokeWidth="4"
           />
           {/* Progress ring */}
           <circle
-            cx="80" cy="80" r="72"
+            cx="60" cy="60" r="52"
             fill="none"
             stroke={state === 'recording' ? '#7C6CFF' : '#DDD8F0'}
             strokeWidth="4"
             strokeLinecap="round"
-            strokeDasharray={`${2 * Math.PI * 72}`}
-            strokeDashoffset={`${2 * Math.PI * 72 * (1 - progress)}`}
+            strokeDasharray={`${2 * Math.PI * 52}`}
+            strokeDashoffset={`${2 * Math.PI * 52 * (1 - progress)}`}
             className="transition-all duration-1000 ease-linear"
           />
         </svg>
-
-        {/* Center button / state */}
         <div className="absolute inset-0 flex items-center justify-center">
           <AnimatePresence mode="wait">
             {state === 'idle' && (
@@ -178,12 +184,11 @@ export default function RecordPage() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.8, opacity: 0 }}
                 onClick={handleStart}
-                className="w-20 h-20 rounded-full bg-echo-accent flex items-center justify-center shadow-lg shadow-echo-accent/30 hover:bg-echo-accent/90 transition-colors active:scale-95"
+                className="w-16 h-16 rounded-full bg-echo-accent flex items-center justify-center shadow-lg shadow-echo-accent/30 hover:bg-echo-accent/90 transition-colors active:scale-95"
               >
-                <Mic size={28} className="text-white" />
+                <Mic size={24} className="text-white" />
               </motion.button>
             )}
-
             {state === 'recording' && (
               <motion.button
                 key="stop"
@@ -191,12 +196,11 @@ export default function RecordPage() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.8, opacity: 0 }}
                 onClick={stopRecording}
-                className="w-20 h-20 rounded-full bg-echo-red recording-pulse flex items-center justify-center active:scale-95"
+                className="w-16 h-16 rounded-full bg-echo-red recording-pulse flex items-center justify-center active:scale-95"
               >
-                <Square size={22} className="text-white" fill="white" />
+                <Square size={18} className="text-white" fill="white" />
               </motion.button>
             )}
-
             {state === 'processing' && (
               <motion.div
                 key="processing"
@@ -207,31 +211,32 @@ export default function RecordPage() {
                 <div className="w-12 h-12 border-2 border-echo-accent border-t-transparent rounded-full animate-spin" />
               </motion.div>
             )}
-
-            {state === 'done' && (
-              <motion.div
-                key="done"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="w-20 h-20 rounded-full bg-echo-green/20 flex items-center justify-center"
-              >
-                <Check size={28} className="text-echo-green" />
-              </motion.div>
-            )}
-
-            {state === 'error' && (
-              <motion.div
-                key="error"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="w-20 h-20 rounded-full bg-echo-red/20 flex items-center justify-center"
-              >
-                <span className="text-echo-red text-2xl">!</span>
-              </motion.div>
-            )}
           </AnimatePresence>
         </div>
       </div>
+      )}
+
+      {/* Small inline check for done state */}
+      {state === 'done' && (
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="w-12 h-12 rounded-full bg-echo-green/20 flex items-center justify-center mb-3"
+        >
+          <Check size={20} className="text-echo-green" />
+        </motion.div>
+      )}
+
+      {/* Inline error icon */}
+      {state === 'error' && (
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="w-12 h-12 rounded-full bg-echo-red/20 flex items-center justify-center mb-3"
+        >
+          <span className="text-echo-red text-xl">!</span>
+        </motion.div>
+      )}
 
       {/* Timer text */}
       {(state === 'recording' || state === 'idle') && (
@@ -300,12 +305,7 @@ export default function RecordPage() {
               </p>
             )}
             {result.emotion_context_notes && (
-              <p className="text-echo-text-dim text-xs mt-3 leading-relaxed border-l-2 border-echo-accent/25 pl-3">
-                <span className="text-echo-text-muted uppercase tracking-wider text-[10px] block mb-1">
-                  Context & changes
-                </span>
-                {result.emotion_context_notes}
-              </p>
+              <EmotionBars data={result.emotion_context_notes} />
             )}
             {result.keywords?.length > 0 && (
               <div className="mt-3">

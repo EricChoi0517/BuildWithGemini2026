@@ -189,6 +189,36 @@ function formatRecentSessionsForPrompt(entries) {
   return `Recent journal sessions (newest first). Use these ONLY to describe change vs continuity—do not invent sessions:\n${lines.join('\n')}`;
 }
 
+/**
+ * Cheap heuristic when Gemini is off: very short answers or no lexical overlap with prompt.
+ * Keeps analytics honest when someone ignores or barely engages the journal prompt.
+ */
+function heuristicJournalPromptNote(transcript, journalPrompt) {
+  const jp = (journalPrompt || '').trim();
+  if (!jp) return '';
+  const t = transcript.trim();
+  const words = t.split(/\s+/).filter(Boolean);
+  const wc = words.length;
+  if (wc < 8) {
+    return 'They spoke very little—hard to know if the journal prompt was answered; treat mood and topics as low-confidence.';
+  }
+  const stop = new Set([
+    'tell', 'describe', 'talk', 'about', 'what', 'your', 'been', 'have', 'something', 'would', 'could',
+    'that', 'this', 'with', 'from', 'they', 'them', 'when', 'where', 'which', 'there', 'here', 'just',
+    'like', 'some', 'into', 'make', 'good', 'does', 'did', 'doesn', 'don', 'want', 'need',
+  ]);
+  const promptTokens = jp.toLowerCase().match(/\b[a-z]{4,}\b/g) || [];
+  const meaningful = [...new Set(promptTokens)].filter((w) => !stop.has(w));
+  if (meaningful.length < 2) return '';
+  const textLower = t.toLowerCase();
+  const hits = meaningful.filter((w) => textLower.includes(w)).length;
+  const ratio = hits / meaningful.length;
+  if (wc >= 18 && ratio < 0.12) {
+    return 'What they said may not match the suggested journal prompt much—summaries and topics reflect their actual words, not the prompt theme.';
+  }
+  return '';
+}
+
 /** True when the model returned JSON without usable analysis fields. */
 function extractionPayloadLooksEmpty(parsed) {
   if (!parsed || typeof parsed !== 'object') return true;
@@ -204,7 +234,7 @@ function extractionPayloadLooksEmpty(parsed) {
  * When the API fails or returns empty JSON, infer mood from wording + acoustic features
  * so the UI never shows only "Unable to analyze entry."
  */
-function heuristicExtractionFromAudio(transcript, acoustic = {}, recentEntries = []) {
+function heuristicExtractionFromAudio(transcript, acoustic = {}, recentEntries = [], journalPrompt = '') {
   const t = transcript.trim();
   const lower = t.toLowerCase();
   let score = 0;
@@ -280,22 +310,28 @@ function heuristicExtractionFromAudio(transcript, acoustic = {}, recentEntries =
   }
 
   const toneParts = [];
-  if (e < 0.32) toneParts.push('softer, lower energy in your voice');
-  if (e > 0.62) toneParts.push('higher energy and animation');
-  if (pr > 0.48) toneParts.push('more pauses between phrases');
-  if (sr > 145) toneParts.push('relatively fast pacing');
-  if (sr < 95) toneParts.push('slower, measured pacing');
-  if (pv > 0.45) toneParts.push('more pitch variation (expressive)');
-  if (pv < 0.22 && e < 0.42) toneParts.push('flatter, steadier delivery');
+  if (e < 0.32) toneParts.push('soft', 'low-energy');
+  if (e > 0.62) toneParts.push('animated', 'high-energy');
+  if (pr > 0.48) toneParts.push('hesitant', 'contemplative');
+  if (sr > 145) toneParts.push('fast-paced', 'engaged');
+  if (sr < 95) toneParts.push('measured', 'slow');
+  if (pv > 0.45) toneParts.push('expressive', 'dynamic');
+  if (pv < 0.22 && e < 0.42) toneParts.push('flat', 'steady');
+  
   const speaking_tone =
     toneParts.length > 0
-      ? `${toneParts.join('; ')} (from your recording’s audio features).`
-      : 'Steady delivery — estimated from your recording’s audio features.';
+      ? toneParts.join(', ')
+      : 'steady, neutral, measured';
   const clip = t.slice(0, 280);
   const summary =
     clip.length > 0
       ? clip + (t.length > clip.length ? '…' : '')
       : 'Journal entry captured.';
+  const promptNote = heuristicJournalPromptNote(t, journalPrompt);
+  const mergedCtx = [emotion_notes.trim(), promptNote].filter(Boolean).join(' ') || null;
+  const dummyHappiness = score > 0 ? Math.round(score * 100) : 0;
+  const dummySadness = score < 0 ? Math.round(Math.abs(score) * 100) : 0;
+  const dummyNeutral = 100 - (dummyHappiness + dummySadness);
   return normalizeEntryExtraction({
     sentiment_score: Math.round(score * 100) / 100,
     sentiment_label: normalizeMoodLabel(label),
@@ -306,12 +342,12 @@ function heuristicExtractionFromAudio(transcript, acoustic = {}, recentEntries =
     keywords: [],
     unresolved_threads: [],
     facial_affect_summary: null,
-    emotion_context_notes: emotion_notes.trim() || null,
+    emotion_context_notes: JSON.stringify({ Happiness: dummyHappiness, Sadness: dummySadness, Neutral: dummyNeutral }),
   });
 }
 
 /** Fill missing summary/tone/context when the model returned partial JSON. */
-function enrichExtractionOutput(result, transcript, acoustic, recentEntries = []) {
+function enrichExtractionOutput(result, transcript, acoustic, recentEntries = [], journalPrompt = '') {
   let out = { ...result };
   if (out.summary === EXTRACTION_FALLBACK.summary && transcript?.trim()) {
     const tr = transcript.trim();
@@ -323,16 +359,16 @@ function enrichExtractionOutput(result, transcript, acoustic, recentEntries = []
   const needTone = !out.speaking_tone?.trim();
   const needCtx = !out.emotion_context_notes?.trim();
   if (needTone || needCtx) {
-    const h = heuristicExtractionFromAudio(transcript, acoustic, recentEntries);
+    const h = heuristicExtractionFromAudio(transcript, acoustic, recentEntries, journalPrompt);
     if (needTone) out = { ...out, speaking_tone: h.speaking_tone };
     if (needCtx && h.emotion_context_notes) {
       out = { ...out, emotion_context_notes: h.emotion_context_notes };
     }
   }
-  if (!out.emotion_context_notes?.trim() && recentEntries.length === 0) {
+  if (!out.emotion_context_notes?.trim()) {
     out = {
       ...out,
-      emotion_context_notes: 'No earlier entries in context—this recording stands alone.',
+      emotion_context_notes: JSON.stringify({ Neutral: 100 }),
     };
   }
   return out;
@@ -615,15 +651,29 @@ export function normalizeEntryExtraction(raw) {
       ? String(faceRaw).trim().slice(0, 600)
       : null;
 
-  const ctxRaw =
-    raw.emotion_context_notes ??
-    raw.emotionContextNotes ??
-    raw.session_emotional_context ??
-    raw.emotional_discrepancy ??
-    null;
-  const emotion_context_notes =
-    ctxRaw != null && String(ctxRaw).trim()
-      ? String(ctxRaw).trim().slice(0, 1200)
+  let emotion_context_notes = null;
+  
+  if (raw.emotion_percentages && typeof raw.emotion_percentages === 'object' && !Array.isArray(raw.emotion_percentages)) {
+    emotion_context_notes = JSON.stringify(raw.emotion_percentages);
+  } else {
+    const ctxRaw =
+      raw.emotion_context_notes ??
+      raw.emotionContextNotes ??
+      raw.session_emotional_context ??
+      raw.emotional_discrepancy ??
+      null;
+    // ensure even if ctxRaw is an object natively, it survives
+    if (ctxRaw != null) {
+       emotion_context_notes = typeof ctxRaw === 'object' ? JSON.stringify(ctxRaw) : String(ctxRaw).trim().slice(0, 1200);
+    }
+  }
+
+  const padhRaw = raw.prompt_adherence ?? raw.promptAdherence ?? null;
+  const padh =
+    padhRaw != null &&
+    String(padhRaw).trim() &&
+    String(padhRaw).trim().toLowerCase() !== 'null'
+      ? String(padhRaw).trim().slice(0, 450)
       : null;
 
   return {
@@ -648,13 +698,16 @@ export function normalizeEntryExtraction(raw) {
  * Uses plain REST fetch — no SDK needed, works in any Vite project
  * @param {string} transcript
  * @param {object} acousticFeatures
- * @param {{ faceImageBase64s?: string[], recentEntries?: object[] }} [multimodal]
+ * @param {{ faceImageBase64s?: string[], recentEntries?: object[], journalPrompt?: string, transcriptVeryShort?: boolean }} [multimodal]
  */
 export async function extractInsights(transcript, acousticFeatures = {}, multimodal = {}) {
   const faceImageBase64s = Array.isArray(multimodal.faceImageBase64s)
     ? multimodal.faceImageBase64s.filter(Boolean).slice(0, 4)
     : [];
   const recentEntries = Array.isArray(multimodal.recentEntries) ? multimodal.recentEntries : [];
+  const journalPrompt =
+    typeof multimodal.journalPrompt === 'string' ? multimodal.journalPrompt.trim() : '';
+  const transcriptVeryShort = !!multimodal.transcriptVeryShort;
 
   const hasFaces = faceImageBase64s.length > 0;
   const priorBlock = formatRecentSessionsForPrompt(recentEntries);
@@ -668,12 +721,28 @@ export async function extractInsights(transcript, acousticFeatures = {}, multimo
 - Do NOT map loud/fast/happy-sounding voice alone to positive if the topic is loss, stress, or pain unless they clearly frame it as genuine relief.
 - sentiment_score should reflect underlying emotional weight when content and performance conflict (often nearer -0.3…0.3), not only surface energy.`;
 
+  const journalBlock = journalPrompt
+    ? `Journal prompt they were invited to respond to (they could ignore or pivot—your job is to notice):
+"""${journalPrompt.replace(/"""/g, '"')}"""
+
+Prompt adherence:
+- Fill "prompt_adherence" with ONE short neutral sentence: did they engage this topic, brush it off, go elsewhere, answer in one word, or ramble on something unrelated? If off-topic, say so clearly.
+- Do NOT invent entities or topics from the prompt if the speaker never mentioned those things—reflect their actual words.
+- Never shame; stay matter-of-fact.`
+    : `No journal prompt was tied to this clip. Set JSON field "prompt_adherence" to null.`;
+
+  const shortBlock = transcriptVeryShort
+    ? `The transcript is VERY SHORT. If a journal prompt exists, say in "prompt_adherence" that fit is uncertain. Keep sentiment_score modest unless words are strongly valenced; avoid speculative topics—prefer empty arrays over guessing.`
+    : '';
+
   const prompt = `You analyze spoken journal clips. Integrate WORDS + acoustic hints${hasFaces ? ' + webcam stills' : ''}. Be specific.
 
 ${discrepancyBlock}
 
 ${faceBlock}
 
+${journalBlock}
+${shortBlock ? `\n${shortBlock}\n` : ''}
 ${priorBlock ? `${priorBlock}\n\n` : ''}Transcript: """${transcript.replace(/"""/g, '"')}"""
 
 Acoustic hints (microphone, not judgmental):
@@ -685,9 +754,10 @@ Acoustic hints (microphone, not judgmental):
 Rules:
 - sentiment_label: pick the BEST fit from this list (snake_case): positive, neutral, negative, mixed, conflicted, bittersweet, hyperbolic_or_performative, subdued, anxious, flat, guarded, hopeful, heavy, warm, numb, disengaged.
 - sentiment_score: -1.0 to 1.0; when delivery contradicts content, keep score moderate unless words are clearly celebratory or clearly devastating.
-- emotion_context_notes: REQUIRED (string, can be short). Mention (1) any mismatch: hyper tone vs sad words, cheerful face vs heavy words, flat voice vs upbeat words; (2) if prior sessions are listed, how THIS entry compares (warmer/colder, more guarded, energy shift, recurring theme). If no priors, say "First entries—no prior comparison." or similar.
-- speaking_tone: how they sound + how it relates to words (and face if any).
-- summary: one neutral sentence on what they shared.
+- emotion_percentages: REQUIRED (object). Provide a JSON object mapping percentage probabilities for basic emotions (Happiness, Sadness, Anger, Fear, Surprise, Disgust) that sum strictly to 100. Always provide non-zero values for at least 3 categories to reflect human emotional complexity.
+- prompt_adherence: If a journal prompt was given above, one concise sentence on how their speech relates to it; if none was given, null.
+- speaking_tone: REQUIRED (string). A comma-separated list of 3-5 descriptive adjectives summarizing their tone and delivery (e.g., "calm, measured, slightly hesitant"). Do NOT use full sentences.
+- summary: one neutral sentence on what they shared (what they actually talked about, not the prompt text unless they engaged it).
 - Output ONLY valid JSON (no markdown).
 
 {
@@ -698,14 +768,21 @@ Rules:
   "keywords": [],
   "speaking_tone": "<required>",
   "facial_affect_summary": ${hasFaces ? '<string or null>' : 'null'},
-  "emotion_context_notes": "<required string>",
+  "emotion_percentages": { "Happiness": 60, "Sadness": 30, "Surprise": 10 },
+  "prompt_adherence": ${journalPrompt ? '"<one sentence>"' : 'null'},
   "unresolved_threads": [],
   "summary": "<required string>"
 }`;
 
   if (!GEMINI_API_KEY || geminiKeyLooksInvalid(GEMINI_API_KEY)) {
     console.warn('[Gemini] Missing or invalid VITE_GEMINI_API_KEY — skipping extraction.');
-    return heuristicExtractionFromAudio(transcript, acousticFeatures, recentEntries);
+    return enrichExtractionOutput(
+      heuristicExtractionFromAudio(transcript, acousticFeatures, recentEntries, journalPrompt),
+      transcript,
+      acousticFeatures,
+      recentEntries,
+      journalPrompt
+    );
   }
 
   const url = restExtractUrl();
@@ -753,20 +830,22 @@ Rules:
     if (!response.ok) {
       console.error('[Gemini] extractInsights HTTP', response.status, data);
       return enrichExtractionOutput(
-        heuristicExtractionFromAudio(transcript, acousticFeatures, recentEntries),
+        heuristicExtractionFromAudio(transcript, acousticFeatures, recentEntries, journalPrompt),
         transcript,
         acousticFeatures,
-        recentEntries
+        recentEntries,
+        journalPrompt
       );
     }
 
     if (!parsed || extractionPayloadLooksEmpty(parsed)) {
       console.warn('[Gemini] extractInsights still empty; using acoustic + text heuristics');
       return enrichExtractionOutput(
-        heuristicExtractionFromAudio(transcript, acousticFeatures, recentEntries),
+        heuristicExtractionFromAudio(transcript, acousticFeatures, recentEntries, journalPrompt),
         transcript,
         acousticFeatures,
-        recentEntries
+        recentEntries,
+        journalPrompt
       );
     }
 
@@ -774,15 +853,17 @@ Rules:
       normalizeEntryExtraction(parsed),
       transcript,
       acousticFeatures,
-      recentEntries
+      recentEntries,
+      journalPrompt
     );
   } catch (err) {
     console.error('[Gemini] Extraction error:', err);
     return enrichExtractionOutput(
-      heuristicExtractionFromAudio(transcript, acousticFeatures, recentEntries),
+      heuristicExtractionFromAudio(transcript, acousticFeatures, recentEntries, journalPrompt),
       transcript,
       acousticFeatures,
-      recentEntries
+      recentEntries,
+      journalPrompt
     );
   }
 }

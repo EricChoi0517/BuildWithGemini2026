@@ -67,6 +67,12 @@ export async function getEntryCount(userId) {
   return count;
 }
 
+export async function deleteEntry(userId, entryId) {
+  const { error } = await supabase.from('entries').delete().eq('id', entryId).eq('user_id', userId);
+
+  if (error) throw error;
+}
+
 // ---- Insight Operations ----
 
 export async function getInsights(userId, { unreadOnly = false, includeDismissed = false } = {}) {
@@ -104,6 +110,15 @@ export async function markInsightRead(insightId) {
   const { error } = await supabase
     .from('insights')
     .update({ is_read: true })
+    .eq('id', insightId);
+
+  if (error) throw error;
+}
+
+export async function dismissInsight(insightId) {
+  const { error } = await supabase
+    .from('insights')
+    .update({ dismissed: true })
     .eq('id', insightId);
 
   if (error) throw error;
