@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, ListMusic } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getEntriesByDateRange } from '@/lib/supabase';
-import { latestEntryForDay } from '@/lib/entriesHelpers';
-import MoodDot, { getMoodColor } from '@/components/MoodDot';
+import { getDayMoodSummary } from '@/lib/entriesHelpers';
+import { getMoodColor } from '@/components/MoodDot';
 import {
   format,
   startOfMonth,
@@ -22,7 +23,7 @@ export default function CalendarPage() {
   const { user } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [entries, setEntries] = useState([]);
-  const [selectedEntry, setSelectedEntry] = useState(null);
+  const [selectedDay, setSelectedDay] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -48,13 +49,14 @@ export default function CalendarPage() {
   }, [user, currentMonth]);
 
   const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
   const calStart = startOfWeek(monthStart);
-  const calEnd = endOfWeek(monthEnd);
+  const calEnd = endOfWeek(endOfMonth(currentMonth));
   const days = eachDayOfInterval({ start: calStart, end: calEnd });
 
-  function getEntryForDay(day) {
-    return latestEntryForDay(entries, day);
+  function dotColorForSummary(summary) {
+    if (!summary) return null;
+    if (summary.avgSentiment != null) return getMoodColor(summary.avgSentiment);
+    return '#A8A29E';
   }
 
   return (
@@ -90,29 +92,37 @@ export default function CalendarPage() {
       {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-1">
         {days.map((day, i) => {
-          const entry = getEntryForDay(day);
+          const summary = getDayMoodSummary(entries, day);
           const inMonth = isSameMonth(day, currentMonth);
           const today = isToday(day);
+          const dotColor = dotColorForSummary(summary);
 
           return (
             <button
               key={i}
-              onClick={() => entry && setSelectedEntry(entry)}
-              disabled={!entry}
+              type="button"
+              aria-label={
+                summary
+                  ? `${format(day, 'MMMM d')}, ${summary.count} recording${summary.count === 1 ? '' : 's'}, average mood`
+                  : undefined
+              }
+              onClick={() => summary && setSelectedDay(day)}
+              disabled={!summary}
               className={`
                 relative aspect-square flex flex-col items-center justify-center rounded-xl text-sm transition-all duration-200
                 ${inMonth ? 'text-echo-text' : 'text-echo-text-dim/30'}
                 ${today ? 'ring-1 ring-echo-accent/40' : ''}
-                ${entry ? 'hover:bg-echo-surface cursor-pointer' : 'cursor-default'}
+                ${summary ? 'hover:bg-echo-surface cursor-pointer' : 'cursor-default'}
               `}
             >
               <span className={`text-xs ${today ? 'font-semibold text-echo-accent' : ''}`}>
                 {format(day, 'd')}
               </span>
-              {entry && (
+              {summary && dotColor && (
                 <div
                   className="w-2 h-2 rounded-full mt-0.5"
-                  style={{ backgroundColor: getMoodColor(entry.sentiment_score) }}
+                  style={{ backgroundColor: dotColor }}
+                  aria-hidden
                 />
               )}
             </button>
@@ -127,143 +137,92 @@ export default function CalendarPage() {
         </p>
       </div>
 
-      {/* Entry Detail Modal */}
       <AnimatePresence>
-        {selectedEntry && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end justify-center"
-            onClick={() => setSelectedEntry(null)}
-          >
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-lg md:max-w-xl lg:max-w-2xl bg-echo-surface border-t border-echo-border rounded-t-3xl md:rounded-2xl md:border md:shadow-xl p-6 max-h-[70vh] overflow-y-auto"
-            >
-              {/* Handle */}
-              <div className="w-10 h-1 bg-echo-border rounded-full mx-auto mb-4" />
-
-              {/* Header */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <MoodDot score={selectedEntry.sentiment_score} size={12} />
-                  <div>
-                    <p className="text-echo-text font-medium text-sm">
-                      {format(new Date(selectedEntry.created_at), 'EEEE, MMM d')}
-                    </p>
-                    <p className="text-echo-text-dim text-xs">
-                      {format(new Date(selectedEntry.created_at), 'h:mm a')} · {selectedEntry.duration_seconds}s
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSelectedEntry(null)}
-                  className="p-1.5 text-echo-text-dim hover:text-echo-text"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              {/* Summary */}
-              {selectedEntry.summary && (
-                <p className="text-echo-text-muted text-sm mb-4 italic">
-                  "{selectedEntry.summary}"
-                </p>
-              )}
-
-              {/* Transcript */}
-              <div className="mb-4">
-                <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-2">Transcript</p>
-                <p className="text-echo-text text-sm leading-relaxed">
-                  {selectedEntry.transcript}
-                </p>
-              </div>
-
-              {selectedEntry.speaking_tone && (
-                <div className="mb-4">
-                  <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-2">Tone</p>
-                  <p className="text-echo-text-muted text-sm leading-relaxed">{selectedEntry.speaking_tone}</p>
-                </div>
-              )}
-
-              {selectedEntry.facial_affect_summary && (
-                <div className="mb-4">
-                  <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-2">From camera</p>
-                  <p className="text-echo-text-muted text-sm leading-relaxed">
-                    {selectedEntry.facial_affect_summary}
-                  </p>
-                </div>
-              )}
-
-              {selectedEntry.emotion_context_notes && (
-                <div className="mb-4">
-                  <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-2">
-                    Context & changes
-                  </p>
-                  <p className="text-echo-text-muted text-sm leading-relaxed">
-                    {selectedEntry.emotion_context_notes}
-                  </p>
-                </div>
-              )}
-
-              {selectedEntry.keywords?.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-2">Keywords</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectedEntry.keywords.map((word, i) => (
-                      <span
-                        key={i}
-                        className="text-xs bg-echo-card border border-echo-border text-echo-text-muted px-2.5 py-1 rounded-md"
-                      >
-                        {word}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Topics */}
-              {selectedEntry.topics?.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-2">Topics</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectedEntry.topics.map((topic, i) => (
-                      <span key={i} className="text-xs text-echo-accent bg-echo-accent/10 px-2.5 py-1 rounded-full">
-                        {topic}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Acoustic Features */}
-              <div className="grid grid-cols-2 gap-3">
-                <AcousticStat label="Energy" value={selectedEntry.energy_level} />
-                <AcousticStat label="Speaking Rate" value={selectedEntry.speaking_rate} suffix=" wpm" />
-                <AcousticStat label="Pause Ratio" value={selectedEntry.pause_ratio} />
-                <AcousticStat label="Pitch Variance" value={selectedEntry.pitch_variance} />
-              </div>
-            </motion.div>
-          </motion.div>
+        {selectedDay && (
+          <DaySummarySheet
+            key={format(selectedDay, 'yyyy-MM-dd')}
+            day={selectedDay}
+            entries={entries}
+            onClose={() => setSelectedDay(null)}
+          />
         )}
       </AnimatePresence>
     </div>
   );
 }
 
-function AcousticStat({ label, value, suffix = '' }) {
-  if (value == null) return null;
+function DaySummarySheet({ day, entries, onClose }) {
+  const summary = getDayMoodSummary(entries, day);
+  if (!summary) return null;
+  const dateStr = format(day, 'yyyy-MM-dd');
+
   return (
-    <div className="p-3 bg-echo-card rounded-lg">
-      <p className="text-echo-text-dim text-[10px] uppercase tracking-wider">{label}</p>
-      <p className="text-echo-text text-sm font-mono mt-1">
-        {typeof value === 'number' ? value.toFixed(2) : value}{suffix}
-      </p>
-    </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end justify-center"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
+        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-lg md:max-w-xl lg:max-w-2xl bg-echo-surface border-t border-echo-border rounded-t-3xl md:rounded-2xl md:border md:shadow-xl p-6 max-h-[70vh] overflow-y-auto"
+      >
+        <div className="w-10 h-1 bg-echo-border rounded-full mx-auto mb-4" />
+
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div
+              className="w-3 h-3 rounded-full shrink-0"
+              style={{
+                backgroundColor:
+                  summary.avgSentiment != null ? getMoodColor(summary.avgSentiment) : '#A8A29E',
+              }}
+            />
+            <div className="min-w-0">
+              <p className="text-echo-text font-medium text-sm">{format(day, 'EEEE, MMM d')}</p>
+              <p className="text-echo-text-dim text-xs mt-0.5">
+                {summary.count} recording{summary.count === 1 ? '' : 's'} this day
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 text-echo-text-dim hover:text-echo-text shrink-0"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="rounded-xl border border-echo-border bg-echo-card/50 p-4 mb-5">
+          <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-2">Average mood</p>
+          {summary.scoredCount > 0 ? (
+            <p className="text-echo-text text-sm leading-relaxed">
+              Averaged across {summary.scoredCount} session{summary.scoredCount === 1 ? '' : 's'} that have a
+              mood score (out of {summary.count} total). The dot matches that average.
+            </p>
+          ) : (
+            <p className="text-echo-text-muted text-sm leading-relaxed">
+              No mood scores for these sessions yet. The marker is neutral; use Recorded sessions to read
+              transcripts.
+            </p>
+          )}
+        </div>
+
+        <Link
+          to={`/sessions?date=${dateStr}`}
+          onClick={onClose}
+          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-sm font-semibold bg-echo-accent text-white shadow-lg shadow-echo-accent/20 hover:bg-echo-accent/90 transition-colors"
+        >
+          <ListMusic size={18} />
+          View sessions &amp; transcripts
+        </Link>
+      </motion.div>
+    </motion.div>
   );
 }

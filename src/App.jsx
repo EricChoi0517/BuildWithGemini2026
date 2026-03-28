@@ -8,6 +8,7 @@ import RecordPage from '@/pages/RecordPage';
 import CalendarPage from '@/pages/CalendarPage';
 import AnalyticsPage from '@/pages/AnalyticsPage';
 import SettingsPage from '@/pages/SettingsPage';
+import RecordedSessionsPage from '@/pages/RecordedSessionsPage';
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/record" element={<RecordPage />} />
             <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/sessions" element={<RecordedSessionsPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>

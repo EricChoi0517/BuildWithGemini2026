@@ -1,0 +1,113 @@
+Echo Journal — Desktop feature list for mobile UI/UX parity
+===========================================================
+Repository: https://github.com/EricChoi0517/BuildWithGemini2026
+Branch reference: uiux_desktop (March 2026)
+
+Use this document when implementing or polishing the Capacitor / small-screen
+experience so behavior and features match the desktop web app unless
+intentionally simplified.
+
+----------------------------------------------------------------------
+ROUTES (src/App.jsx)
+----------------------------------------------------------------------
+Public:
+  /login          — Login, sign up, forgot / reset password flow
+
+Protected (inside Layout: sidebar on md+, bottom nav on small screens):
+  /               — Home
+  /calendar       — Month calendar
+  /sessions       — Recorded sessions (transcripts, delete)
+  /record         — Voice (and optional webcam) recording
+  /analytics      — Analytics
+  /settings       — Account (display name, recording toggles, privacy blurb,
+                    change password, sign out). Nav label is "Account".
+
+----------------------------------------------------------------------
+NAVIGATION (src/components/navConfig.js, Sidebar.jsx, BottomNav.jsx)
+----------------------------------------------------------------------
+Order (non-primary items): Home, Calendar, Sessions, Record, Analytics, Account
+- "Record" is the primary FAB-style item in bottom nav (center).
+- Sessions uses ListMusic icon; Account uses User icon (not "Settings" label).
+- Desktop: left sidebar (hidden below md).
+- Mobile: bottom nav (hidden md and up) with safe-area padding variable.
+
+Mobile implementers: 6 items + FAB is crowded — verify tap targets, labels,
+and consider condensed labels or a "More" pattern if needed.
+
+----------------------------------------------------------------------
+VISUAL THEME
+----------------------------------------------------------------------
+- Cream / warm palette (tailwind echo-* tokens, sidebar surface).
+- index.html theme-color aligned with app.
+- Layout: max-width main column with generous horizontal padding on xl.
+
+----------------------------------------------------------------------
+HOME (src/pages/HomePage.jsx)
+----------------------------------------------------------------------
+- Centered header: greeting + display name on one line; subtitle below
+  ("Your overview — mood trend, last 30 days, latest reflections…").
+- Single centered content column (max-w-3xl / xl:max-w-4xl): no wide empty
+  area beside a sidebar for primary content.
+- Mood Trend card (graph or progress toward 3 scored days).
+- Last 30 days: row of MoodDot, centered in card.
+- Recent entries: stacked under 30-day row; links to /sessions and /calendar.
+- New Insights section below main column when insights exist.
+- Empty state: CTA to record; on lg+, "Getting started" card centered.
+
+----------------------------------------------------------------------
+CALENDAR (src/pages/CalendarPage.jsx)
+----------------------------------------------------------------------
+- Day dot = average sentiment_score across ALL sessions that calendar day
+  (see src/lib/entriesHelpers.js: getDayMoodSummary, entriesForDay).
+- If there are sessions but no scores: neutral gray dot (#A8A29E).
+- Tap day: bottom sheet with day summary only (not full transcript).
+- CTA: "View sessions & transcripts" → /sessions?date=YYYY-MM-DD (local date).
+- Month modal sheet: wide on desktop (md:max-w-xl lg:max-w-2xl).
+
+----------------------------------------------------------------------
+RECORDED SESSIONS (src/pages/RecordedSessionsPage.jsx)
+----------------------------------------------------------------------
+- Lists entries (newest first), ENTRY_LIMIT = 200.
+- Expand row for full transcript.
+- Delete with confirmation → deleteEntry(userId, entryId) in src/lib/supabase.js.
+- ?date=YYYY-MM-DD filters to that calendar day; "Clear filter" clears query.
+- Link back to calendar in header.
+
+----------------------------------------------------------------------
+AUTH (src/context/AuthContext.jsx, LoginPage, Settings/Account)
+----------------------------------------------------------------------
+- signUp, signIn, signOut, resetPassword, updatePassword exposed from context.
+- resetPassword: email link redirectTo = origin + /settings (Supabase redirect
+  allowlist must include that URL).
+- Login: modes login | signup | reset; signup has confirm password; forgot
+  flows to reset; success state after reset email sent.
+- Account page: display name, recording toggles, privacy copy, expandable
+  change password (new + confirm), sign out.
+
+----------------------------------------------------------------------
+DATA / API HELPERS
+----------------------------------------------------------------------
+- getDayMoodSummary, entriesForDay, latestEntryForDay — entriesHelpers.js
+- deleteEntry — supabase.js (RLS: users delete own rows only)
+
+----------------------------------------------------------------------
+MOBILE-SPECIFIC CHECKLIST (behavior parity + polish)
+----------------------------------------------------------------------
+[ ] All routes reachable from nav or clear in-app links.
+[ ] Calendar day sheet: dismiss gesture, scroll vs drag conflicts.
+[ ] Sessions: long transcript in expander; consider paging past 200 entries.
+[ ] Delete: replace window.confirm with native-friendly sheet if desired.
+[ ] Password recovery deep link opens app and allows update on Account.
+[ ] Safe areas (notch, home indicator) on bottom nav and modals.
+
+----------------------------------------------------------------------
+FILES OF INTEREST
+----------------------------------------------------------------------
+src/pages/HomePage.jsx
+src/pages/CalendarPage.jsx
+src/pages/RecordedSessionsPage.jsx
+src/pages/LoginPage.jsx
+src/pages/SettingsPage.jsx
+src/components/Layout.jsx, Sidebar.jsx, BottomNav.jsx, navConfig.js
+src/lib/entriesHelpers.js, src/lib/supabase.js
+src/context/AuthContext.jsx
