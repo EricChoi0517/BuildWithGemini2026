@@ -1,6 +1,6 @@
 import { NavLink, Link } from 'react-router-dom';
-import { Mic } from 'lucide-react';
 import { MAIN_NAV } from './navConfig';
+import LumosMark from '@/components/LumosMark';
 
 export default function Sidebar() {
   return (
@@ -10,15 +10,15 @@ export default function Sidebar() {
           to="/"
           className="flex items-center gap-3 rounded-xl p-1 -m-1 hover:bg-echo-card/60 transition-colors group"
         >
-          <div className="w-10 h-10 rounded-xl bg-echo-accent/12 border border-echo-accent/20 flex items-center justify-center text-echo-accent shadow-sm">
-            <Mic size={20} strokeWidth={2.25} />
+          <div className="w-10 h-10 rounded-xl bg-white border border-echo-border flex items-center justify-center shadow-sm">
+            <LumosMark size={26} decorative />
           </div>
           <div className="min-w-0 text-left">
             <span className="font-display text-lg lg:text-xl text-echo-text leading-tight block group-hover:text-echo-accent transition-colors">
-              Echo Journal
+              Lumos
             </span>
             <span className="text-[10px] text-echo-text-dim uppercase tracking-widest font-medium">
-              Voice diary
+              Voice journal
             </span>
           </div>
         </Link>
@@ -33,8 +33,8 @@ export default function Sidebar() {
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-3 rounded-xl font-medium text-sm transition-all ${
                   isActive
-                    ? 'bg-echo-accent text-white shadow-md shadow-echo-accent/25'
-                    : 'bg-echo-accent/90 text-white hover:bg-echo-accent shadow-sm'
+                    ? 'bg-echo-accent text-white'
+                    : 'bg-echo-accent text-white/95 hover:bg-echo-accent hover:text-white'
                 }`
               }
             >

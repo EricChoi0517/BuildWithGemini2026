@@ -13,6 +13,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { readGuestEntries } from '@/lib/guestCookies';
 import CalendarPanel from '@/components/CalendarPanel';
 import {
   getEntries,
@@ -56,7 +57,7 @@ function insightTypeLabel(type) {
 }
 
 export default function AnalyticsPage() {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [entries, setEntries] = useState([]);
   const [insights, setInsights] = useState([]);
@@ -92,27 +93,33 @@ export default function AnalyticsPage() {
 
   const loadData = useCallback(
     async ({ silent } = {}) => {
-      if (!user) return;
+      if (!user && !isGuest) return;
       if (!silent) setLoading(true);
       try {
-        const [e, i] = await Promise.all([
-          getEntries(user.id, { limit: 60 }),
-          getInsights(user.id),
-        ]);
-        await ensurePastWeekSummary(user.id).catch((err) =>
-          console.warn('Weekly summary sync skipped:', err)
-        );
-        const s = await getWeeklySummaries(user.id);
-        setEntries(e || []);
-        setInsights(i || []);
-        setSummaries(s || []);
+        if (isGuest && !user) {
+          setEntries(readGuestEntries());
+          setInsights([]);
+          setSummaries([]);
+        } else if (user) {
+          const [e, i] = await Promise.all([
+            getEntries(user.id, { limit: 60 }),
+            getInsights(user.id),
+          ]);
+          await ensurePastWeekSummary(user.id).catch((err) =>
+            console.warn('Weekly summary sync skipped:', err)
+          );
+          const s = await getWeeklySummaries(user.id);
+          setEntries(e || []);
+          setInsights(i || []);
+          setSummaries(s || []);
+        }
       } catch (err) {
         console.error('Failed to load analytics:', err);
       } finally {
         if (!silent) setLoading(false);
       }
     },
-    [user]
+    [user, isGuest]
   );
 
   useEffect(() => {
@@ -132,6 +139,7 @@ export default function AnalyticsPage() {
   }, [insights]);
 
   async function handleMarkInsightRead(id) {
+    if (!user) return;
     try {
       await markInsightRead(id);
       setInsights((prev) => prev.map((x) => (x.id === id ? { ...x, is_read: true } : x)));
@@ -141,6 +149,7 @@ export default function AnalyticsPage() {
   }
 
   async function handleDismissInsight(id) {
+    if (!user) return;
     try {
       await dismissInsight(id);
       setInsights((prev) => prev.filter((x) => x.id !== id));

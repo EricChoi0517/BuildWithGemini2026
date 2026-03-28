@@ -1,7 +1,8 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import LoginPage from '@/pages/LoginPage';
 
-export default function ProtectedRoute({ children }) {
+export default function AuthCatchAll() {
   const { user, loading, isGuest } = useAuth();
 
   if (loading) {
@@ -12,6 +13,6 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  if (!user && !isGuest) return <Navigate to="/login" replace />;
-  return children;
+  if (user || isGuest) return <Navigate to="/" replace />;
+  return <LoginPage />;
 }

@@ -17,11 +17,12 @@ import {
 } from '@/lib/trendMetrics';
 import TrendChart from '@/components/TrendChart';
 import { ensurePastWeekSummary } from '@/lib/weeklySummary';
+import { readGuestEntries } from '@/lib/guestCookies';
 import MoodDot, { getMoodColor } from '@/components/MoodDot';
 import { format, subDays, startOfDay, differenceInHours } from 'date-fns';
 
 export default function HomePage() {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [entries, setEntries] = useState([]);
   const [insights, setInsights] = useState([]);
   const [profile, setProfile] = useState(null);
@@ -45,8 +46,16 @@ export default function HomePage() {
   }, [trendMetricId]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user && !isGuest) return;
     async function load() {
+      if (isGuest && !user) {
+        setEntries(readGuestEntries());
+        setInsights([]);
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
+      if (!user) return;
       try {
         const [e, i, p] = await Promise.all([
           // Enough rows to cover 30 calendar days with multiple sessions per day (avoid "missing" older days).
@@ -67,9 +76,10 @@ export default function HomePage() {
       }
     }
     load();
-  }, [user]);
+  }, [user, isGuest]);
 
-  const displayName = profile?.display_name || user?.email?.split('@')[0] || '';
+  const displayName =
+    isGuest && !user ? 'Guest' : profile?.display_name || user?.email?.split('@')[0] || '';
   const greeting = getGreeting();
   const activeTrendMetric = getTrendMetricById(trendMetricId);
 
@@ -162,30 +172,28 @@ export default function HomePage() {
           transition={{ delay: 0.1 }}
           className="space-y-4"
         >
-          <div className="flex flex-col items-center gap-3 md:flex-row md:items-end md:justify-between md:gap-4 max-w-xl mx-auto w-full px-1">
-            <h2 className="font-pageTitle font-semibold text-sm md:text-base text-echo-text-muted uppercase tracking-wider text-center md:text-left shrink-0">
-              Trend
-            </h2>
-            <div className="w-full max-w-[280px] md:max-w-xs">
-              <label htmlFor="home-trend-metric" className="sr-only">
-                What to plot on the chart
-              </label>
-              <select
-                id="home-trend-metric"
-                value={trendMetricId}
-                onChange={(e) => setTrendMetricId(e.target.value)}
-                className="w-full text-sm bg-echo-card border border-echo-border rounded-xl px-3 py-2.5 text-echo-text focus:outline-none focus:ring-2 focus:ring-echo-accent/30"
-              >
-                {TREND_METRICS.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.label}
-                  </option>
-                ))}
-              </select>
-              <p className="text-echo-text-dim text-[10px] mt-1.5 leading-snug text-center md:text-right">
-                {activeTrendMetric.description}
-              </p>
-            </div>
+          <h2 className="font-pageTitle font-semibold text-xl md:text-2xl text-echo-text text-center tracking-tight">
+            Last 30 days
+          </h2>
+          <div className="w-full max-w-[280px] mx-auto px-1">
+            <label htmlFor="home-trend-metric" className="sr-only">
+              What to plot on the chart
+            </label>
+            <select
+              id="home-trend-metric"
+              value={trendMetricId}
+              onChange={(e) => setTrendMetricId(e.target.value)}
+              className="w-full text-sm bg-echo-card border border-echo-border rounded-xl px-3 py-2.5 text-echo-text focus:outline-none focus:ring-2 focus:ring-echo-accent/30"
+            >
+              {TREND_METRICS.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-echo-text-dim text-[10px] mt-1.5 leading-snug text-center">
+              {activeTrendMetric.description}
+            </p>
           </div>
           <div className="bg-echo-surface border border-echo-border rounded-2xl p-3 md:p-4 shadow-sm overflow-x-auto min-h-[140px] md:min-h-[180px] flex flex-col justify-center">
             {trendFilledDays >= 3 ? (
@@ -212,6 +220,14 @@ export default function HomePage() {
               </div>
             )}
           </div>
+
+          {entries.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-[6px] p-4 md:p-5 bg-echo-surface border border-echo-border rounded-2xl shadow-sm">
+              {moodDays.map((day, i) => (
+                <MoodDot key={i} score={day.score} size={14} date={day.date} />
+              ))}
+            </div>
+          )}
         </motion.div>
 
         {entries.length === 0 ? (
@@ -228,7 +244,7 @@ export default function HomePage() {
               <div className="space-y-2">
                 <h2 className="text-xl md:text-2xl font-display text-echo-text">Your emotional space</h2>
                 <p className="text-echo-text-muted text-sm max-w-md mx-auto">
-                  Echo helps you track your journey through voice. Record how you feel, and we&apos;ll help you see the patterns.
+                  Lumos helps you track your journey through voice. Record how you feel, and we&apos;ll help you see the patterns.
                 </p>
               </div>
 
@@ -283,37 +299,24 @@ export default function HomePage() {
             transition={{ delay: 0.15 }}
             className="space-y-8"
           >
-            <div className="space-y-3">
-              <h2 className="text-echo-text-muted text-xs font-medium uppercase tracking-wider text-center">
-                Last 30 days
-              </h2>
-              <div className="flex flex-wrap justify-center gap-[6px] p-4 md:p-5 bg-echo-surface border border-echo-border rounded-2xl shadow-sm">
-                {moodDays.map((day, i) => (
-                  <MoodDot key={i} score={day.score} size={14} date={day.date} />
-                ))}
-              </div>
-            </div>
-
             {recentEntries.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex flex-col items-center gap-2">
-                  <h2 className="text-echo-text-muted text-xs font-medium uppercase tracking-wider">
-                    Recent entries
-                  </h2>
-                  <div className="flex items-center justify-center gap-4">
-                    <Link
-                      to="/sessions"
-                      className="text-echo-accent text-xs flex items-center gap-0.5 hover:underline"
-                    >
-                      Sessions <ChevronRight size={12} />
-                    </Link>
-                    <Link
-                      to="/analytics?tab=calendar"
-                      className="text-echo-accent text-xs flex items-center gap-0.5 hover:underline"
-                    >
-                      Calendar <ChevronRight size={12} />
-                    </Link>
-                  </div>
+              <div className="space-y-4">
+                <h2 className="font-pageTitle font-semibold text-xl md:text-2xl text-echo-text text-center tracking-tight">
+                  Recent entries
+                </h2>
+                <div className="flex items-center justify-center gap-6 flex-wrap">
+                  <Link
+                    to="/sessions"
+                    className="text-echo-accent text-sm font-medium flex items-center gap-0.5 hover:underline"
+                  >
+                    Sessions <ChevronRight size={16} strokeWidth={2} />
+                  </Link>
+                  <Link
+                    to="/analytics?tab=calendar"
+                    className="text-echo-accent text-sm font-medium flex items-center gap-0.5 hover:underline"
+                  >
+                    Calendar <ChevronRight size={16} strokeWidth={2} />
+                  </Link>
                 </div>
 
                 <div className="space-y-2">
@@ -333,7 +336,7 @@ export default function HomePage() {
                         {entry.summary || entry.transcript}
                       </p>
                       {entry.speaking_tone && (
-                        <p className="text-echo-text-dim text-[10px] mt-1.5 line-clamp-1 italic">
+                        <p className="text-echo-text text-sm mt-1.5 line-clamp-2 leading-relaxed">
                           {entry.speaking_tone}
                         </p>
                       )}
@@ -375,10 +378,10 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="max-w-3xl xl:max-w-4xl mx-auto space-y-3"
+          className="max-w-3xl xl:max-w-4xl mx-auto space-y-4"
         >
-          <h2 className="text-echo-text-muted text-xs font-medium uppercase tracking-wider flex items-center justify-center gap-1.5">
-            <Sparkles size={12} className="text-echo-accent" />
+          <h2 className="font-pageTitle font-semibold text-xl md:text-2xl text-echo-text text-center tracking-tight flex items-center justify-center gap-2 flex-wrap">
+            <Sparkles size={20} className="text-echo-accent shrink-0" aria-hidden />
             New Insights
           </h2>
           <div className="space-y-2">

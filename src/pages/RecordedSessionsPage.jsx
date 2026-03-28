@@ -5,12 +5,13 @@ import { ChevronDown, ChevronUp, Trash2, ListMusic } from 'lucide-react';
 import { format, isSameDay, parseISO, isValid } from 'date-fns';
 import { useAuth } from '@/context/AuthContext';
 import { getEntries, deleteEntry } from '@/lib/supabase';
+import { readGuestEntries, deleteGuestEntry } from '@/lib/guestCookies';
 import { getMoodColor } from '@/components/MoodDot';
 
 const ENTRY_LIMIT = 200;
 
 export default function RecordedSessionsPage() {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const dateFilter = searchParams.get('date');
   const [entries, setEntries] = useState([]);
@@ -26,14 +27,18 @@ export default function RecordedSessionsPage() {
   }, [dateFilter]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user && !isGuest) return;
     let cancelled = false;
     async function load() {
       setLoading(true);
       setError('');
       try {
-        const data = await getEntries(user.id, { limit: ENTRY_LIMIT });
-        if (!cancelled) setEntries(data || []);
+        if (isGuest && !user) {
+          if (!cancelled) setEntries(readGuestEntries());
+        } else if (user) {
+          const data = await getEntries(user.id, { limit: ENTRY_LIMIT });
+          if (!cancelled) setEntries(data || []);
+        }
       } catch (err) {
         console.error('Failed to load sessions:', err);
         if (!cancelled) setError(err.message || 'Could not load recordings');
@@ -45,7 +50,7 @@ export default function RecordedSessionsPage() {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, isGuest]);
 
   const filteredEntries = useMemo(() => {
     if (!parsedFilterDate) return entries;
@@ -55,13 +60,17 @@ export default function RecordedSessionsPage() {
   const displayList = parsedFilterDate ? filteredEntries : entries;
 
   async function handleDelete(entryId) {
-    if (!user) return;
     if (!window.confirm('Delete this recording? This cannot be undone.')) return;
     setDeletingId(entryId);
     setError('');
     try {
-      await deleteEntry(user.id, entryId);
-      setEntries((prev) => prev.filter((e) => e.id !== entryId));
+      if (isGuest && !user) {
+        deleteGuestEntry(entryId);
+        setEntries((prev) => prev.filter((e) => e.id !== entryId));
+      } else if (user) {
+        await deleteEntry(user.id, entryId);
+        setEntries((prev) => prev.filter((e) => e.id !== entryId));
+      }
       setExpandedId((id) => (id === entryId ? null : id));
     } catch (err) {
       setError(err.message || 'Delete failed');

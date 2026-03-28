@@ -1,31 +1,29 @@
 /**
- * Echo Journal — Demo Persona Seed Script
+ * Lumos — Expanded Demo Seed v2
  *
- * Creates 3 demo users with 21 days of journal entries,
- * pre-generated insights, and weekly summaries.
+ * 3 personas × 30+ entries each, with:
+ * - keywords[], speaking_tone, emotion_context_notes (JSON emotion percentages)
+ * - Multiple entries on high-drama days
+ * - Pre-generated insights + weekly summaries
  *
- * Requires in .env (never commit the service role key):
- *   SUPABASE_SERVICE_ROLE_KEY=...
- *   VITE_SUPABASE_URL or SUPABASE_URL
+ * Run:  npm run seed:demo   (or: node supabase/seed.mjs)
  *
- * Run: npm run seed:demo
+ * Requires .env: SUPABASE_SERVICE_ROLE_KEY, VITE_SUPABASE_URL or SUPABASE_URL
  *
- * Demo logins (password for all: echo-demo-2026):
- *   alex@echojournal.demo
- *   maya@echojournal.demo
- *   jordan@echojournal.demo
+ * Demo logins:
+ *   alex@echojournal.demo   / echo-demo-2026
+ *   maya@echojournal.demo   / echo-demo-2026
+ *   jordan@echojournal.demo / echo-demo-2026
  */
 
 import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error(
-    'Missing SUPABASE_SERVICE_ROLE_KEY and VITE_SUPABASE_URL (or SUPABASE_URL) in .env'
-  );
+  console.error('Missing SUPABASE_SERVICE_ROLE_KEY and VITE_SUPABASE_URL (or SUPABASE_URL) in .env');
   process.exit(1);
 }
 
@@ -33,799 +31,156 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
-// ============================================
-// HELPERS
-// ============================================
-function daysAgo(n, hour = 21, minute = 0) {
-  const d = new Date();
-  d.setDate(d.getDate() - (21 - n));
-  d.setHours(hour, minute, 0, 0);
-  return d.toISOString();
+function daysAgo(n, h = 21, m = 0) {
+  const d = new Date(); d.setDate(d.getDate() - (30 - n)); d.setHours(h, m, 0, 0); return d.toISOString();
 }
+function emo(o) { return JSON.stringify(o); }
 
-// ============================================
-// PERSONA 1 — ALEX (The Founder)
-// Arc: Slow burnout over 3 weeks
-// Sentiment: starts +0.6, ends -0.4
-// Key entities: Sarah (co-founder), Diana (investor), investors
-// Unresolved thread: "the board meeting" mentioned day 3, never revisited
-// Vocabulary drift: "excited" → "hoping" → "trying"
-// ============================================
-const alexEntries = [
-  {
-    day: 1, created_at: daysAgo(1, 8, 15),
-    transcript: "Excited about this week. We just closed a seed extension and the team is fired up. Had a great call with two potential enterprise clients this morning. Sarah and I are finally aligned on the product roadmap. Revenue is trending up and I feel like we're building real momentum. This is why I started this company.",
-    duration_seconds: 28, energy_level: 0.82, speaking_rate: 152, pause_ratio: 0.10, pitch_variance: 0.38,
-    sentiment_score: 0.8, sentiment_label: 'positive',
-    entities: ['Sarah'], topics: ['seed extension', 'enterprise clients', 'product roadmap', 'revenue'],
-    unresolved_threads: [], summary: 'Great momentum after seed extension, aligned with Sarah on roadmap.',
-  },
-  {
-    day: 2, created_at: daysAgo(2, 21, 30),
-    transcript: "Good day. Spent most of it on hiring. We need a senior backend engineer but the pipeline is thin. Every good candidate wants fully remote and we're hybrid. Sarah thinks we should bend on this but I'm worried about culture. Also excited about the demo day next month. Practicing my pitch this weekend.",
-    duration_seconds: 30, energy_level: 0.70, speaking_rate: 145, pause_ratio: 0.14, pitch_variance: 0.30,
-    sentiment_score: 0.5, sentiment_label: 'positive',
-    entities: ['Sarah'], topics: ['hiring', 'remote work', 'demo day', 'pitch'],
-    unresolved_threads: ['remote work policy'], summary: 'Hiring challenges, demo day prep, debating remote policy with Sarah.',
-  },
-  {
-    day: 3, created_at: daysAgo(3, 22, 0),
-    transcript: "The board meeting is coming up and I haven't even started the deck. Diana wants updated financials and a revised burn rate projection. I told Sarah I'd handle it but honestly I'm drowning in operational stuff. Spent three hours today on a customer escalation that should have been handled by support. Need to delegate better.",
-    duration_seconds: 29, energy_level: 0.50, speaking_rate: 158, pause_ratio: 0.12, pitch_variance: 0.42,
-    sentiment_score: 0.0, sentiment_label: 'neutral',
-    entities: ['Diana', 'Sarah'], topics: ['board meeting', 'financials', 'burn rate', 'delegation'],
-    unresolved_threads: ['board meeting deck'], summary: 'Board meeting prep stress, struggling to delegate, customer fire drill.',
-  },
-  {
-    day: 4, created_at: daysAgo(4, 20, 45),
-    transcript: "Sarah and I got into it today about the pricing model. She wants to go freemium and I think it's too early. We were both frustrated and it bled into the team standup which wasn't great. We smoothed it over after but something feels off. We used to just vibe on these decisions.",
-    duration_seconds: 27, energy_level: 0.45, speaking_rate: 140, pause_ratio: 0.20, pitch_variance: 0.40,
-    sentiment_score: -0.2, sentiment_label: 'negative',
-    entities: ['Sarah'], topics: ['pricing', 'co-founder conflict', 'team dynamics'],
-    unresolved_threads: ['pricing disagreement'], summary: 'Fight with Sarah about pricing, tension visible to team.',
-  },
-  {
-    day: 5, created_at: daysAgo(5, 23, 15),
-    transcript: "Investors want a monthly update and I've been putting it off. The numbers are fine but the narrative is harder to write. How do you say 'we're growing but I'm exhausted and my co-founder and I aren't communicating well' in investor-speak. Anyway. Knocked out some product work tonight which felt good.",
-    duration_seconds: 26, energy_level: 0.42, speaking_rate: 135, pause_ratio: 0.22, pitch_variance: 0.35,
-    sentiment_score: -0.1, sentiment_label: 'neutral',
-    entities: ['Sarah', 'investors'], topics: ['investor update', 'communication', 'exhaustion'],
-    unresolved_threads: [], summary: 'Dreading investor update, noting communication gap with Sarah.',
-  },
-  {
-    day: 6, created_at: daysAgo(6, 14, 0),
-    transcript: "Saturday but I'm at my laptop. Trying to get ahead on the board deck. Sarah texted asking if I wanted to grab lunch and I said I was busy. I know I should take breaks but every hour I'm not working feels like we're falling behind. The runway is fourteen months. Fourteen months sounds like a lot until it isn't.",
-    duration_seconds: 28, energy_level: 0.35, speaking_rate: 128, pause_ratio: 0.25, pitch_variance: 0.28,
-    sentiment_score: -0.3, sentiment_label: 'negative',
-    entities: ['Sarah'], topics: ['weekend work', 'runway', 'isolation'],
-    unresolved_threads: [], summary: 'Working through Saturday, declined Sarah lunch invite, fixating on runway.',
-  },
-  {
-    day: 7, created_at: daysAgo(7, 22, 30),
-    transcript: "Sunday night. Didn't leave the apartment all weekend. Ate delivery twice. I'm aware this isn't sustainable. But the board deck is done and it actually looks good. Small win. Starting the week hoping things settle down. I keep using that word. Hoping. Like I don't have control over it.",
-    duration_seconds: 24, energy_level: 0.30, speaking_rate: 118, pause_ratio: 0.28, pitch_variance: 0.22,
-    sentiment_score: -0.3, sentiment_label: 'negative',
-    entities: [], topics: ['isolation', 'health', 'self-awareness'],
-    unresolved_threads: [], summary: 'Full weekend working, noticing unhealthy patterns, using "hoping" language.',
-  },
-  {
-    day: 8, created_at: daysAgo(8, 9, 0),
-    transcript: "Monday. Team standup felt flat. I could tell people are picking up on my energy. One of our engineers asked if everything was okay and I said yeah just busy. I don't want to bring my stress into the team but I think I already am. Sarah was late to standup which annoyed me more than it should have.",
-    duration_seconds: 26, energy_level: 0.38, speaking_rate: 132, pause_ratio: 0.20, pitch_variance: 0.30,
-    sentiment_score: -0.2, sentiment_label: 'negative',
-    entities: ['Sarah'], topics: ['team morale', 'leadership', 'irritability'],
-    unresolved_threads: [], summary: 'Team sensing low energy, irritated at Sarah over small things.',
-  },
-  {
-    day: 9, created_at: daysAgo(9, 21, 0),
-    transcript: "Had coffee with another founder today. He sold his company last year. I asked him how he knew when to push through versus when something was actually broken. He said if you're asking the question it's already worth paying attention to. That hit different. Still processing it.",
-    duration_seconds: 25, energy_level: 0.45, speaking_rate: 125, pause_ratio: 0.24, pitch_variance: 0.28,
-    sentiment_score: 0.1, sentiment_label: 'neutral',
-    entities: [], topics: ['mentorship', 'self-reflection', 'burnout'],
-    unresolved_threads: [], summary: 'Mentor conversation planted a seed about recognizing burnout.',
-  },
-  {
-    day: 10, created_at: daysAgo(10, 22, 45),
-    transcript: "Investors want to schedule a call. Probably about the update I still haven't sent. I keep hoping they'll just forget about it. There's that word again. Hoping. I emailed Diana to push the board meeting back a week. She said fine but I could feel the judgment through the screen.",
-    duration_seconds: 23, energy_level: 0.32, speaking_rate: 138, pause_ratio: 0.18, pitch_variance: 0.35,
-    sentiment_score: -0.4, sentiment_label: 'negative',
-    entities: ['Diana', 'investors'], topics: ['avoidance', 'investors', 'board meeting'],
-    unresolved_threads: [], summary: 'Avoiding investor communication, pushed board meeting, noting "hoping" pattern.',
-  },
-  {
-    day: 11, created_at: daysAgo(11, 20, 30),
-    transcript: "Sarah confronted me today. Said I've been distant and short with her for two weeks. She's right. I apologized but I don't think I explained myself well. I said I was just stressed and she said that's not a strategy. She's right about that too. I'm just... trying to hold it all together.",
-    duration_seconds: 27, energy_level: 0.35, speaking_rate: 122, pause_ratio: 0.28, pitch_variance: 0.32,
-    sentiment_score: -0.4, sentiment_label: 'negative',
-    entities: ['Sarah'], topics: ['co-founder relationship', 'confrontation', 'stress'],
-    unresolved_threads: [], summary: 'Sarah called out distance, acknowledged she was right, using "trying" language.',
-  },
-  {
-    day: 12, created_at: daysAgo(12, 21, 15),
-    transcript: "Lost a customer today. Not a huge one but it stings. They said our onboarding was confusing and support was slow. Both fair criticisms. I know what we need to fix but I don't have the bandwidth to fix it. That's the whole problem. Everything is clear but nothing is actionable because I'm spread too thin.",
-    duration_seconds: 28, energy_level: 0.28, speaking_rate: 142, pause_ratio: 0.15, pitch_variance: 0.38,
-    sentiment_score: -0.5, sentiment_label: 'negative',
-    entities: [], topics: ['churn', 'onboarding', 'bandwidth', 'overwhelm'],
-    unresolved_threads: [], summary: 'Lost customer, clear on problems but no bandwidth to fix them.',
-  },
-  {
-    day: 13, created_at: daysAgo(13, 15, 0),
-    transcript: "Saturday again. At the office again. Nobody else is here. Sarah went to her friend's birthday and I told her I couldn't make it. The truth is I could have. I just didn't want to pretend to be fine in front of people who would ask about the company. The performance of being a founder is exhausting on its own.",
-    duration_seconds: 26, energy_level: 0.22, speaking_rate: 115, pause_ratio: 0.30, pitch_variance: 0.20,
-    sentiment_score: -0.5, sentiment_label: 'negative',
-    entities: ['Sarah'], topics: ['weekend work', 'social avoidance', 'performance', 'isolation'],
-    unresolved_threads: [], summary: 'Working alone on Saturday, avoiding social situations, exhausted by founder performance.',
-  },
-  {
-    day: 14, created_at: daysAgo(14, 23, 45),
-    transcript: "Didn't do anything today. Sat on the couch. Watched videos. Couldn't make myself open my laptop. I know I should be worried about that but honestly it felt like my body just said no. Maybe that's what rest looks like when you've forgotten how to do it voluntarily.",
-    duration_seconds: 20, energy_level: 0.15, speaking_rate: 105, pause_ratio: 0.35, pitch_variance: 0.15,
-    sentiment_score: -0.4, sentiment_label: 'negative',
-    entities: [], topics: ['burnout', 'paralysis', 'rest'],
-    unresolved_threads: [], summary: 'Completely shut down, body refused to work, involuntary rest day.',
-  },
-  {
-    day: 15, created_at: daysAgo(15, 21, 0),
-    transcript: "Trying to get back on track. Had a decent product session. We shipped a small fix that a customer asked for and they sent a really nice thank you email. That helped. Sarah and I had lunch and actually talked about non-work stuff for the first time in weeks. She mentioned she's been worried about me.",
-    duration_seconds: 27, energy_level: 0.42, speaking_rate: 130, pause_ratio: 0.20, pitch_variance: 0.28,
-    sentiment_score: 0.1, sentiment_label: 'neutral',
-    entities: ['Sarah'], topics: ['recovery', 'customer win', 'co-founder', 'concern'],
-    unresolved_threads: [], summary: 'Small wins helping, Sarah expressed worry, trying to stabilize.',
-  },
-  {
-    day: 16, created_at: daysAgo(16, 22, 30),
-    transcript: "Investor call happened. It was actually fine. They're happy with the numbers. I was transparent about being stretched thin and they suggested we hire a VP of Operations. Which is smart but also feels like admitting I can't do this. I know that's ego talking. Trying to separate the two.",
-    duration_seconds: 26, energy_level: 0.40, speaking_rate: 135, pause_ratio: 0.18, pitch_variance: 0.30,
-    sentiment_score: 0.0, sentiment_label: 'neutral',
-    entities: ['investors'], topics: ['investor call', 'hiring', 'vulnerability', 'ego'],
-    unresolved_threads: ['VP of Operations hiring'], summary: 'Investor call went fine, they suggested VP Ops, wrestling with ego.',
-  },
-  {
-    day: 17, created_at: daysAgo(17, 20, 0),
-    transcript: "Sarah shared a job description she drafted for the VP Ops role. It was really good. Thorough. She'd clearly been thinking about this for a while. I felt guilty that she had to do that because I was too proud to admit I needed help. Told her that. She appreciated it.",
-    duration_seconds: 24, energy_level: 0.45, speaking_rate: 128, pause_ratio: 0.22, pitch_variance: 0.25,
-    sentiment_score: 0.2, sentiment_label: 'positive',
-    entities: ['Sarah'], topics: ['hiring', 'vulnerability', 'co-founder', 'gratitude'],
-    unresolved_threads: [], summary: 'Sarah proactively drafted VP Ops JD, admitted needing help.',
-  },
-  {
-    day: 18, created_at: daysAgo(18, 21, 30),
-    transcript: "Skipped lunch again. Third time this week. I know I keep doing this. Trying to at least notice it even if I can't fix it yet. The product is in a good place. ARR is growing. I just need to stop treating myself like fuel to burn. That's what Sarah said and she's not wrong.",
-    duration_seconds: 22, energy_level: 0.35, speaking_rate: 120, pause_ratio: 0.25, pitch_variance: 0.22,
-    sentiment_score: -0.2, sentiment_label: 'negative',
-    entities: ['Sarah'], topics: ['health', 'skipping meals', 'self-awareness', 'ARR'],
-    unresolved_threads: ['skipping meals'], summary: 'Skipping meals pattern, Sarah called out self-neglect.',
-  },
-  {
-    day: 19, created_at: daysAgo(19, 22, 0),
-    transcript: "A friend asked me today how the startup was going and I said 'we're trying.' Not 'great' or 'exciting' or even 'hard.' Just trying. I heard myself say it and it felt honest in a way that scared me. The company is fine. The metrics are fine. I'm the part that's not fine.",
-    duration_seconds: 25, energy_level: 0.30, speaking_rate: 115, pause_ratio: 0.28, pitch_variance: 0.25,
-    sentiment_score: -0.4, sentiment_label: 'negative',
-    entities: [], topics: ['identity', 'honesty', 'burnout', 'disconnection'],
-    unresolved_threads: [], summary: 'Heard himself say "trying" and recognized personal crisis separate from company.',
-  },
-  {
-    day: 20, created_at: daysAgo(20, 21, 45),
-    transcript: "Sarah booked me a therapy appointment. She didn't ask, she just did it. I should be annoyed but I'm mostly relieved. First session is Thursday. I also finally sent the investor update. It was honest. Shorter than usual. Nobody complained.",
-    duration_seconds: 20, energy_level: 0.38, speaking_rate: 125, pause_ratio: 0.22, pitch_variance: 0.28,
-    sentiment_score: 0.1, sentiment_label: 'neutral',
-    entities: ['Sarah', 'investors'], topics: ['therapy', 'co-founder support', 'investor update'],
-    unresolved_threads: [], summary: 'Sarah booked therapy for him, sent honest investor update.',
-  },
-  {
-    day: 21, created_at: daysAgo(21, 21, 0),
-    transcript: "Three weeks. Looking back at this I can see it clearly. The excitement turned into pressure turned into avoidance turned into paralysis. I'm not fixed. But I'm aware. Sarah and I are talking again. The therapy appointment is tomorrow. The company will survive me taking care of myself. Trying to believe that.",
-    duration_seconds: 30, energy_level: 0.42, speaking_rate: 120, pause_ratio: 0.24, pitch_variance: 0.28,
-    sentiment_score: -0.1, sentiment_label: 'neutral',
-    entities: ['Sarah'], topics: ['reflection', 'self-awareness', 'therapy', 'recovery'],
-    unresolved_threads: [], summary: 'Three-week reflection — sees the burnout arc clearly, taking first steps toward recovery.',
-  },
+// ══════════════════════════════════════════════════════
+// ALEX — FOUNDER (35 entries)
+// ══════════════════════════════════════════════════════
+const alex=[
+{day:1,t:daysAgo(1,8,15),tr:"Excited about this week. Closed the seed extension and the team is fired up. Had a great call with two enterprise clients. Sarah and I are finally aligned on the product roadmap. Revenue trending up. This is why I started this company.",dur:28,e:0.82,sr:152,pr:0.10,pv:0.38,ss:0.8,sl:'positive',ent:['Sarah'],top:['seed extension','enterprise','product roadmap','revenue'],kw:['seed','enterprise','roadmap','revenue','momentum','aligned'],thr:[],sum:'Post-funding momentum, aligned with Sarah on roadmap.',tone:'confident, energetic, optimistic, fast-paced',emj:emo({Happiness:72,Surprise:10,Neutral:14,Sadness:2,Fear:1,Anger:1})},
+{day:2,t:daysAgo(2,21,30),tr:"Good day. Spent most of it on hiring. We need a senior backend engineer but the pipeline is thin. Every good candidate wants remote and we're hybrid. Sarah thinks we should bend on this. Also excited about demo day next month.",dur:30,e:0.70,sr:145,pr:0.14,pv:0.30,ss:0.5,sl:'positive',ent:['Sarah'],top:['hiring','remote work','demo day'],kw:['hiring','backend','remote','pipeline','demo day'],thr:['remote work policy'],sum:'Hiring challenges, demo day prep, debating remote with Sarah.',tone:'measured, thoughtful, slightly concerned',emj:emo({Happiness:45,Neutral:35,Fear:10,Sadness:5,Anger:3,Surprise:2})},
+{day:3,t:daysAgo(3,20,0),tr:"Shipped the new onboarding flow today. Clean launch, no bugs. Got three positive customer emails within two hours. Sarah handled the announcement while I focused on a sales call. Good division of labor.",dur:24,e:0.75,sr:148,pr:0.12,pv:0.32,ss:0.7,sl:'positive',ent:['Sarah'],top:['product launch','onboarding','customers'],kw:['onboarding','launch','customers','shipped','sales'],thr:[],sum:'Clean product launch, positive customer response.',tone:'satisfied, brisk, warm',emj:emo({Happiness:65,Neutral:25,Surprise:8,Sadness:1,Fear:1,Anger:0})},
+{day:4,t:daysAgo(4,22,0),tr:"Sarah and I got into it about the pricing model. She wants freemium, I think it's too early. We were both frustrated and it bled into standup. We smoothed it over but something feels off. We used to just vibe on decisions.",dur:27,e:0.45,sr:140,pr:0.20,pv:0.40,ss:-0.2,sl:'negative',ent:['Sarah'],top:['pricing','co-founder conflict','team dynamics'],kw:['pricing','freemium','conflict','standup','tension'],thr:['pricing disagreement'],sum:'Fight with Sarah about pricing, tension visible to team.',tone:'tense, clipped, defensive',emj:emo({Anger:30,Sadness:22,Fear:15,Neutral:20,Happiness:8,Surprise:3,Disgust:2})},
+{day:5,t:daysAgo(5,9,0),tr:"Board meeting coming up and I haven't started the deck. Diana wants updated financials and revised burn rate. Told Sarah I'd handle it but I'm drowning in operational stuff. Three hours on a customer escalation that support should have caught.",dur:29,e:0.50,sr:158,pr:0.12,pv:0.42,ss:0.0,sl:'neutral',ent:['Diana','Sarah'],top:['board meeting','financials','burn rate','delegation'],kw:['board meeting','financials','burn rate','deck','escalation','delegation'],thr:['board meeting deck'],sum:'Board meeting prep stress, struggling to delegate.',tone:'rushed, overwhelmed, slightly panicked',emj:emo({Fear:32,Anger:18,Sadness:15,Neutral:25,Happiness:5,Surprise:3,Disgust:2})},
+{day:5,t:daysAgo(5,23,15),tr:"Late night. Investors want a monthly update I've been putting off. The numbers are fine but the narrative is harder. How do you say we're growing but I'm exhausted and my co-founder and I aren't communicating well. Knocked out some product work which felt good at least.",dur:26,e:0.42,sr:135,pr:0.22,pv:0.35,ss:-0.1,sl:'neutral',ent:['Sarah','investors'],top:['investor update','communication','exhaustion'],kw:['investors','update','narrative','exhaustion','communication'],thr:[],sum:'Dreading investor update, noting communication gap with Sarah.',tone:'weary, self-aware, slightly defeated',emj:emo({Sadness:28,Fear:22,Neutral:30,Happiness:10,Anger:8,Surprise:2})},
+{day:6,t:daysAgo(6,14,0),tr:"Saturday but I'm at my laptop. Trying to get ahead on the board deck. Sarah texted asking if I wanted to grab lunch and I said I was busy. Every hour I'm not working feels like we're falling behind. Runway is fourteen months.",dur:28,e:0.35,sr:128,pr:0.25,pv:0.28,ss:-0.3,sl:'negative',ent:['Sarah'],top:['weekend work','runway','isolation'],kw:['runway','weekend','laptop','isolation','falling behind'],thr:[],sum:'Working through Saturday, declined Sarah, fixating on runway.',tone:'flat, resigned, monotone',emj:emo({Sadness:35,Fear:25,Neutral:25,Anger:8,Happiness:5,Surprise:1,Disgust:1})},
+{day:7,t:daysAgo(7,22,30),tr:"Sunday night. Didn't leave the apartment all weekend. Ate delivery twice. Board deck is done and it looks good. Small win. Starting the week hoping things settle down. I keep using that word. Hoping. Like I don't have control.",dur:24,e:0.30,sr:118,pr:0.28,pv:0.22,ss:-0.3,sl:'negative',ent:[],top:['isolation','health','self-awareness'],kw:['hoping','isolation','delivery','control','weekend'],thr:[],sum:'Full weekend working, noticing hoping language.',tone:'quiet, introspective, drained',emj:emo({Sadness:38,Neutral:28,Fear:18,Happiness:8,Anger:5,Surprise:2,Disgust:1})},
+{day:8,t:daysAgo(8,9,0),tr:"Monday standup felt flat. People are picking up on my energy. An engineer asked if everything was okay and I said yeah just busy. Sarah was late which annoyed me more than it should have.",dur:26,e:0.38,sr:132,pr:0.20,pv:0.30,ss:-0.2,sl:'negative',ent:['Sarah'],top:['team morale','leadership','irritability'],kw:['standup','energy','team','irritability','leadership'],thr:[],sum:'Team sensing low energy, irritated at Sarah.',tone:'clipped, irritable, guarded',emj:emo({Anger:25,Sadness:22,Fear:18,Neutral:25,Happiness:5,Surprise:3,Disgust:2})},
+{day:9,t:daysAgo(9,21,0),tr:"Coffee with another founder who sold last year. Asked how he knew when to push through versus when something was actually broken. He said if you're asking the question it's already worth paying attention to.",dur:25,e:0.45,sr:125,pr:0.24,pv:0.28,ss:0.1,sl:'neutral',ent:[],top:['mentorship','self-reflection','burnout'],kw:['mentor','push through','broken','attention','founder'],thr:[],sum:'Mentor conversation about recognizing burnout.',tone:'contemplative, slow, searching',emj:emo({Neutral:35,Sadness:25,Happiness:15,Fear:12,Surprise:10,Anger:2,Disgust:1})},
+{day:10,t:daysAgo(10,22,45),tr:"Investors want to schedule a call. Probably about the update I still haven't sent. I keep hoping they'll forget. Emailed Diana to push the board meeting back a week. She said fine but I could feel the judgment.",dur:23,e:0.32,sr:138,pr:0.18,pv:0.35,ss:-0.4,sl:'negative',ent:['Diana','investors'],top:['avoidance','investors','board meeting'],kw:['hoping','investors','avoidance','judgment','board meeting'],thr:[],sum:'Avoiding investors, pushed board meeting.',tone:'anxious, evasive, self-critical',emj:emo({Fear:35,Sadness:25,Anger:12,Neutral:18,Happiness:5,Surprise:3,Disgust:2})},
+{day:10,t:daysAgo(10,23,50),tr:"Can't sleep. Running numbers in my head. If we don't close an enterprise deal by Q3 the burn rate doesn't work. At midnight it feels existential. Need to stop checking Slack.",dur:18,e:0.25,sr:115,pr:0.30,pv:0.20,ss:-0.5,sl:'negative',ent:[],top:['insomnia','burn rate','anxiety'],kw:['insomnia','burn rate','Q3','existential','midnight'],thr:[],sum:'Midnight anxiety spiral about burn rate.',tone:'whispered, fragile, racing',emj:emo({Fear:45,Sadness:30,Anger:5,Neutral:12,Happiness:3,Surprise:3,Disgust:2})},
+{day:11,t:daysAgo(11,20,30),tr:"Sarah confronted me. Said I've been distant and short for two weeks. She's right. Apologized but couldn't explain well. Said I was just stressed and she said that's not a strategy. She's right about that too. I'm just trying to hold it all together.",dur:27,e:0.35,sr:122,pr:0.28,pv:0.32,ss:-0.4,sl:'negative',ent:['Sarah'],top:['co-founder','confrontation','stress'],kw:['distant','confrontation','trying','stress','strategy'],thr:[],sum:'Sarah called out distance, using trying language.',tone:'subdued, ashamed, halting',emj:emo({Sadness:40,Fear:18,Anger:12,Neutral:18,Happiness:5,Surprise:5,Disgust:2})},
+{day:12,t:daysAgo(12,10,0),tr:"Lost a customer. Not huge but it stings. They said onboarding was confusing and support was slow. Both fair. I know what to fix but don't have bandwidth. Everything is clear but nothing is actionable.",dur:28,e:0.28,sr:142,pr:0.15,pv:0.38,ss:-0.5,sl:'negative',ent:[],top:['churn','onboarding','bandwidth'],kw:['churn','onboarding','bandwidth','support','actionable'],thr:[],sum:'Lost customer, no bandwidth to fix known problems.',tone:'bitter, frustrated, tight',emj:emo({Anger:28,Sadness:32,Fear:15,Neutral:15,Happiness:5,Surprise:3,Disgust:2})},
+{day:12,t:daysAgo(12,22,0),tr:"Sat in the parking lot after work for twenty minutes before driving home. Didn't want to go in. Didn't want to be here. Just sat there. The car felt like the only place nobody needed anything from me.",dur:16,e:0.18,sr:100,pr:0.38,pv:0.15,ss:-0.6,sl:'negative',ent:[],top:['burnout','paralysis','isolation'],kw:['parking lot','burnout','alone','paralysis','escape'],thr:[],sum:'Sat in car alone, paralyzed between work and home.',tone:'hollow, barely audible, exhausted',emj:emo({Sadness:52,Fear:18,Neutral:18,Anger:5,Happiness:2,Surprise:3,Disgust:2})},
+{day:13,t:daysAgo(13,15,0),tr:"Saturday at the office. Nobody here. Sarah went to a friend's birthday and I told her I couldn't make it. Truth is I could have. Just didn't want to pretend to be fine. The performance of being a founder is exhausting on its own.",dur:26,e:0.22,sr:115,pr:0.30,pv:0.20,ss:-0.5,sl:'negative',ent:['Sarah'],top:['weekend work','social avoidance','performance'],kw:['performance','avoidance','pretending','exhausting','alone'],thr:[],sum:'Working alone, avoiding social events.',tone:'detached, dry, self-aware',emj:emo({Sadness:42,Neutral:22,Fear:15,Anger:10,Happiness:5,Surprise:3,Disgust:3})},
+{day:13,t:daysAgo(13,23,0),tr:"Ordered food. Ate at my desk. Scrolling LinkedIn and every founder post is about grinding. I want to throw my phone. Maybe the grind was the wrong framework from the start.",dur:18,e:0.20,sr:108,pr:0.32,pv:0.18,ss:-0.6,sl:'negative',ent:[],top:['hustle culture','anger','social media'],kw:['LinkedIn','hustle','grind','anger','framework'],thr:[],sum:'Frustration at hustle culture narratives.',tone:'sardonic, bitter, low energy',emj:emo({Anger:35,Sadness:30,Disgust:12,Neutral:15,Happiness:3,Fear:3,Surprise:2})},
+{day:14,t:daysAgo(14,13,0),tr:"Didn't do anything today. Sat on the couch. Watched videos. Couldn't open my laptop. My body just said no. Maybe that's what rest looks like when you've forgotten how to do it voluntarily.",dur:20,e:0.15,sr:105,pr:0.35,pv:0.15,ss:-0.4,sl:'negative',ent:[],top:['burnout','paralysis','rest'],kw:['couch','paralysis','rest','involuntary','shutdown'],thr:[],sum:'Complete shutdown, body refused to work.',tone:'flat, resigned, barely present',emj:emo({Sadness:45,Neutral:30,Fear:10,Happiness:5,Anger:5,Surprise:3,Disgust:2})},
+{day:14,t:daysAgo(14,21,0),tr:"Sarah called tonight. Didn't ask about work. Just asked how I was. I said I don't know. First time I've said that out loud. She was quiet. Then she said maybe we should talk tomorrow. Not about the company. About me.",dur:22,e:0.30,sr:110,pr:0.30,pv:0.25,ss:-0.2,sl:'negative',ent:['Sarah'],top:['vulnerability','co-founder','honesty'],kw:['vulnerability','honesty','I don\'t know','Sarah','care'],thr:[],sum:'Honest moment with Sarah, admitted not being okay.',tone:'raw, fragile, cracking',emj:emo({Sadness:40,Happiness:12,Neutral:20,Fear:15,Surprise:8,Anger:3,Disgust:2})},
+{day:15,t:daysAgo(15,21,0),tr:"Trying to get back. Decent product session. Shipped a fix, got a thank you email. Sarah and I had lunch and talked non-work stuff. She's been worried about me.",dur:27,e:0.42,sr:130,pr:0.20,pv:0.28,ss:0.1,sl:'neutral',ent:['Sarah'],top:['recovery','customer win','co-founder'],kw:['trying','recovery','customer','lunch','worried'],thr:[],sum:'Small wins, Sarah expressed worry.',tone:'cautious, slightly warmer',emj:emo({Neutral:32,Happiness:25,Sadness:20,Fear:12,Surprise:6,Anger:3,Disgust:2})},
+{day:16,t:daysAgo(16,22,30),tr:"Investor call happened. Actually fine. They're happy with numbers. Was transparent about being stretched thin and they suggested VP of Operations. Smart but feels like admitting I can't do this. Ego talking. Trying to separate the two.",dur:26,e:0.40,sr:135,pr:0.18,pv:0.30,ss:0.0,sl:'neutral',ent:['investors'],top:['investor call','VP Ops','vulnerability','ego'],kw:['investors','VP Ops','ego','transparent','stretched thin'],thr:['VP Ops hiring'],sum:'Investor call fine, VP Ops suggested.',tone:'measured, honest, self-analytical',emj:emo({Neutral:35,Fear:18,Happiness:18,Sadness:15,Surprise:8,Anger:4,Disgust:2})},
+{day:17,t:daysAgo(17,20,0),tr:"Sarah shared a JD she drafted for VP Ops. Really thorough. She'd been thinking about it. Felt guilty she had to do that because I was too proud. Told her that. She appreciated it.",dur:24,e:0.45,sr:128,pr:0.22,pv:0.25,ss:0.2,sl:'positive',ent:['Sarah'],top:['hiring','vulnerability','gratitude'],kw:['VP Ops','JD','pride','help','gratitude','Sarah'],thr:[],sum:'Sarah drafted VP Ops JD, admitted needing help.',tone:'grateful, humbled, genuine',emj:emo({Happiness:30,Neutral:28,Sadness:18,Surprise:10,Fear:8,Anger:4,Disgust:2})},
+{day:18,t:daysAgo(18,21,30),tr:"Skipped lunch again. Third time this week. Trying to at least notice it. ARR is growing. I just need to stop treating myself like fuel to burn. Sarah said that and she's not wrong.",dur:22,e:0.35,sr:120,pr:0.25,pv:0.22,ss:-0.2,sl:'negative',ent:['Sarah'],top:['health','skipping meals','ARR'],kw:['skipping lunch','fuel','ARR','self-care','notice'],thr:['skipping meals'],sum:'Skipping meals, Sarah called it out.',tone:'quiet, contemplative, tired',emj:emo({Sadness:30,Neutral:30,Happiness:12,Fear:15,Anger:8,Surprise:3,Disgust:2})},
+{day:19,t:daysAgo(19,22,0),tr:"Friend asked how the startup was going. I said we're trying. Not great or exciting. Just trying. Heard myself and it felt honest in a way that scared me. The company is fine. I'm the part that's not fine.",dur:25,e:0.30,sr:115,pr:0.28,pv:0.25,ss:-0.4,sl:'negative',ent:[],top:['identity','honesty','burnout'],kw:['trying','honest','scared','metrics','not fine'],thr:[],sum:'Recognized personal crisis separate from company.',tone:'slow, raw, vulnerable',emj:emo({Sadness:42,Fear:20,Neutral:18,Happiness:8,Anger:7,Surprise:3,Disgust:2})},
+{day:20,t:daysAgo(20,8,30),tr:"Morning run. First one in three weeks. Only twenty minutes but my legs remembered something my brain forgot. The air was cold and I felt present for the first time in a while.",dur:16,e:0.52,sr:130,pr:0.18,pv:0.28,ss:0.3,sl:'positive',ent:[],top:['exercise','presence','recovery'],kw:['running','morning','present','cold air','body'],thr:[],sum:'First run in weeks, brief moment of presence.',tone:'gentle, surprised, hopeful',emj:emo({Happiness:35,Neutral:30,Surprise:15,Sadness:10,Fear:5,Anger:3,Disgust:2})},
+{day:20,t:daysAgo(20,21,45),tr:"Sarah booked me a therapy appointment. Didn't ask, just did it. Should be annoyed but mostly relieved. First session Thursday. Also sent the investor update. Honest. Shorter than usual. Nobody complained.",dur:20,e:0.38,sr:125,pr:0.22,pv:0.28,ss:0.1,sl:'neutral',ent:['Sarah','investors'],top:['therapy','co-founder support','investor update'],kw:['therapy','relieved','honest','update','Sarah'],thr:[],sum:'Sarah booked therapy, sent honest update.',tone:'relieved, slightly bemused, tender',emj:emo({Happiness:22,Neutral:30,Sadness:20,Surprise:15,Fear:8,Anger:3,Disgust:2})},
+{day:21,t:daysAgo(21,21,0),tr:"Three weeks. Looking back I can see it. Excitement turned into pressure turned into avoidance turned into paralysis. Not fixed but aware. Sarah and I are talking. Therapy tomorrow. The company will survive me taking care of myself. Trying to believe that.",dur:30,e:0.42,sr:120,pr:0.24,pv:0.28,ss:-0.1,sl:'neutral',ent:['Sarah'],top:['reflection','self-awareness','therapy','recovery'],kw:['reflection','aware','therapy','survive','self-care','trying'],thr:[],sum:'Three-week reflection, sees burnout arc.',tone:'steady, reflective, cautious',emj:emo({Neutral:30,Sadness:22,Happiness:20,Fear:12,Surprise:8,Anger:5,Disgust:3})},
+{day:22,t:daysAgo(22,20,0),tr:"First therapy session. She asked what success looks like and I couldn't answer without the company. She pointed that out. Sat with the silence. Not uncomfortable, just unfamiliar. Going back next week.",dur:24,e:0.45,sr:118,pr:0.26,pv:0.22,ss:0.2,sl:'positive',ent:[],top:['therapy','identity','success'],kw:['therapy','success','identity','silence','unfamiliar'],thr:[],sum:'First therapy, challenged on success definition.',tone:'thoughtful, measured, open',emj:emo({Neutral:32,Happiness:25,Sadness:18,Surprise:12,Fear:8,Anger:3,Disgust:2})},
+{day:24,t:daysAgo(24,21,15),tr:"Real conversation with Sarah about what the next six months look like for us. Not the company. Us as people. She's tired too. Agreed to take alternate Fridays off next month. Accountability for rest. Weird concept.",dur:28,e:0.50,sr:130,pr:0.20,pv:0.30,ss:0.4,sl:'positive',ent:['Sarah'],top:['co-founder','rest','boundaries'],kw:['conversation','Fridays off','rest','accountability','co-founder'],thr:[],sum:'Real conversation about sustainability.',tone:'warm, collaborative, lighter',emj:emo({Happiness:38,Neutral:28,Sadness:12,Surprise:10,Fear:5,Anger:4,Disgust:3})},
+{day:26,t:daysAgo(26,21,0),tr:"VP Ops interviews. Second candidate strong. Ten years scaling. Very operational. Opposite of me. Told Sarah I'm trying not to see it as failure. She laughed and said it's the smartest thing we could do.",dur:25,e:0.48,sr:132,pr:0.20,pv:0.28,ss:0.3,sl:'positive',ent:['Sarah'],top:['VP Ops','hiring','growth'],kw:['VP Ops','interview','scaling','failure','smartest'],thr:[],sum:'VP Ops candidate strong, reframing help.',tone:'lighter, self-deprecating, genuine',emj:emo({Happiness:32,Neutral:30,Fear:12,Sadness:12,Surprise:8,Anger:4,Disgust:2})},
+{day:28,t:daysAgo(28,21,30),tr:"Second therapy session. Talked about difference between being responsible for something and being consumed by it. She used enmeshment. Looked it up. It fits. The company and I are enmeshed. Untangling that is the work now.",dur:26,e:0.48,sr:125,pr:0.22,pv:0.28,ss:0.2,sl:'positive',ent:[],top:['therapy','enmeshment','identity','boundaries'],kw:['therapy','enmeshment','responsible','consumed','untangling'],thr:[],sum:'Therapy introduced enmeshment concept.',tone:'analytical, introspective, engaged',emj:emo({Neutral:30,Happiness:25,Sadness:18,Surprise:12,Fear:8,Anger:5,Disgust:2})},
+{day:30,t:daysAgo(30,21,0),tr:"Month end. ARR up twelve percent. Team stable. Sarah and I are better. Sleeping six hours instead of four. Still skip lunch sometimes but I notice. Progress isn't linear. But it's there. Maybe that's enough for now.",dur:28,e:0.52,sr:128,pr:0.20,pv:0.28,ss:0.3,sl:'positive',ent:['Sarah'],top:['reflection','progress','ARR','sleep','self-care'],kw:['ARR','progress','sleep','noticing','maybe','enough'],thr:[],sum:'Month reflection, slow but real personal progress.',tone:'measured, honest, cautiously optimistic',emj:emo({Happiness:30,Neutral:32,Sadness:15,Fear:8,Surprise:8,Anger:4,Disgust:3})},
 ];
 
-// ============================================
-// PERSONA 2 — MAYA (The Student)
-// Arc: Anxiety spike before exams, relief after
-// Key entities: Jake (roommate), Professor Chen, Anika (study partner)
-// Unresolved thread: Jake mentioned positively early on, disappears entirely
-// Speech patterns: pause ratio increases, speaking rate goes up pre-exams
-// Duration gets shorter in week 3 (exhaustion)
-// ============================================
-const mayaEntries = [
-  {
-    day: 1, created_at: daysAgo(1, 22, 0),
-    transcript: "Good first week of the quarter. Moved into the new apartment with Jake and it's way better than the dorms. He made pasta for us on the first night which was sweet. My schedule is heavy but manageable. Stats, algorithms, and Professor Chen's NLP seminar which I'm really excited about.",
-    duration_seconds: 28, energy_level: 0.72, speaking_rate: 148, pause_ratio: 0.12, pitch_variance: 0.32,
-    sentiment_score: 0.7, sentiment_label: 'positive',
-    entities: ['Jake', 'Professor Chen'], topics: ['new apartment', 'roommate', 'classes', 'NLP'],
-    unresolved_threads: [], summary: 'Good start to quarter, happy with new apartment and Jake, excited about NLP seminar.',
-  },
-  {
-    day: 2, created_at: daysAgo(2, 21, 30),
-    transcript: "Went to the campus fair with Jake. He signed up for intramural soccer and I found a quant finance reading group which is perfect. Met this girl Anika who's also in the algorithms class. We might start studying together. Weather was beautiful. College feels right today.",
-    duration_seconds: 25, energy_level: 0.68, speaking_rate: 142, pause_ratio: 0.14, pitch_variance: 0.30,
-    sentiment_score: 0.6, sentiment_label: 'positive',
-    entities: ['Jake', 'Anika'], topics: ['campus life', 'quant finance', 'friends', 'study group'],
-    unresolved_threads: [], summary: 'Campus fair with Jake, found quant reading group, met Anika.',
-  },
-  {
-    day: 3, created_at: daysAgo(3, 23, 15),
-    transcript: "Jake and I had people over and it was actually fun. I'm usually not a host but he makes it easy. Stayed up too late though and I have Professor Chen's seminar at eight thirty tomorrow. The first reading assignment is dense. Sixty pages on transformer architectures. Need to speed read in the morning.",
-    duration_seconds: 26, energy_level: 0.55, speaking_rate: 150, pause_ratio: 0.12, pitch_variance: 0.35,
-    sentiment_score: 0.3, sentiment_label: 'positive',
-    entities: ['Jake', 'Professor Chen'], topics: ['social life', 'sleep', 'transformers', 'reading'],
-    unresolved_threads: [], summary: 'Fun night hosting with Jake, but behind on NLP readings.',
-  },
-  {
-    day: 4, created_at: daysAgo(4, 21, 45),
-    transcript: "Study session with Anika went well. She's incredibly sharp. We worked through the dynamic programming problem set and she explained the tabulation approach in a way that just clicked. I feel like I'm learning more from study partners than lectures sometimes. Grabbed boba after.",
-    duration_seconds: 24, energy_level: 0.62, speaking_rate: 140, pause_ratio: 0.16, pitch_variance: 0.28,
-    sentiment_score: 0.5, sentiment_label: 'positive',
-    entities: ['Anika'], topics: ['studying', 'dynamic programming', 'algorithms'],
-    unresolved_threads: [], summary: 'Great study session with Anika, dynamic programming clicking.',
-  },
-  {
-    day: 5, created_at: daysAgo(5, 22, 30),
-    transcript: "Professor Chen announced the midterm format today. Open note but time-pressured. Forty percent of the grade. That's... a lot. Also the stats midterm is the same week. I need to start planning. Made a study calendar tonight but looking at it is already stressful. Two weeks to prepare.",
-    duration_seconds: 25, energy_level: 0.48, speaking_rate: 155, pause_ratio: 0.12, pitch_variance: 0.38,
-    sentiment_score: -0.1, sentiment_label: 'neutral',
-    entities: ['Professor Chen'], topics: ['midterms', 'study planning', 'stress', 'grades'],
-    unresolved_threads: [], summary: 'Midterm details dropped, two exams same week, stress building.',
-  },
-  {
-    day: 6, created_at: daysAgo(6, 20, 0),
-    transcript: "Something happened with Jake. I came home and he had moved my stuff off the shared desk without asking. I brought it up and he got weirdly defensive. Said I was overreacting. Maybe I was. But it felt dismissive. Didn't want to push it. Studied at the library instead.",
-    duration_seconds: 23, energy_level: 0.40, speaking_rate: 135, pause_ratio: 0.22, pitch_variance: 0.35,
-    sentiment_score: -0.3, sentiment_label: 'negative',
-    entities: ['Jake'], topics: ['roommate conflict', 'boundaries', 'avoidance'],
-    unresolved_threads: ['Jake conflict'], summary: 'Jake moved her stuff, got defensive when confronted, retreated to library.',
-  },
-  {
-    day: 7, created_at: daysAgo(7, 23, 0),
-    transcript: "Full day at the library. Anika and I did a practice exam for algorithms. I got most of it but blanked on the graph traversal section. Need to review BFS and DFS again. My brain feels full. Going to sleep early tonight. Haven't seen Jake since yesterday. It's fine.",
-    duration_seconds: 22, energy_level: 0.38, speaking_rate: 148, pause_ratio: 0.18, pitch_variance: 0.30,
-    sentiment_score: -0.1, sentiment_label: 'neutral',
-    entities: ['Anika'], topics: ['studying', 'algorithms', 'graph traversal', 'exhaustion'],
-    unresolved_threads: [], summary: 'Practice exam went okay, avoiding Jake, mental fatigue.',
-  },
-  {
-    day: 8, created_at: daysAgo(8, 22, 30),
-    transcript: "Midterm week starts Monday. I can feel the anxiety in my chest. Like this low hum. Studied for six hours today and I still don't feel ready for stats. The confidence intervals section is confusing and the textbook isn't helping. Anika said she's stressed too which makes me feel slightly less alone in it.",
-    duration_seconds: 26, energy_level: 0.35, speaking_rate: 160, pause_ratio: 0.10, pitch_variance: 0.42,
-    sentiment_score: -0.4, sentiment_label: 'negative',
-    entities: ['Anika'], topics: ['anxiety', 'midterms', 'statistics', 'confidence intervals'],
-    unresolved_threads: [], summary: 'Physical anxiety building, stats weak spot, speaking faster.',
-  },
-  {
-    day: 9, created_at: daysAgo(9, 23, 45),
-    transcript: "Couldn't sleep last night so I studied until three AM. Bad idea. Fell asleep during the NLP lecture and Professor Chen noticed. She didn't say anything but I saw her look. I'm drinking too much coffee. Three cups today. My hands are shaking a little. Exam is in two days.",
-    duration_seconds: 22, energy_level: 0.28, speaking_rate: 165, pause_ratio: 0.08, pitch_variance: 0.45,
-    sentiment_score: -0.5, sentiment_label: 'negative',
-    entities: ['Professor Chen'], topics: ['insomnia', 'caffeine', 'sleep', 'midterms'],
-    unresolved_threads: [], summary: 'Sleep-deprived, fell asleep in lecture, physical anxiety symptoms.',
-  },
-  {
-    day: 10, created_at: daysAgo(10, 22, 0),
-    transcript: "Stats midterm today. I think it went okay. Maybe. The last question on hypothesis testing I wasn't sure about. I changed my answer twice. When I change answers it's usually wrong. Whatever. Done. Can't change it now. Algorithms midterm Thursday. No time to rest.",
-    duration_seconds: 20, energy_level: 0.32, speaking_rate: 158, pause_ratio: 0.10, pitch_variance: 0.40,
-    sentiment_score: -0.2, sentiment_label: 'negative',
-    entities: [], topics: ['midterm', 'statistics', 'uncertainty', 'second-guessing'],
-    unresolved_threads: [], summary: 'Stats midterm done, second-guessing answers, no rest before next exam.',
-  },
-  {
-    day: 11, created_at: daysAgo(11, 21, 30),
-    transcript: "All day algorithms prep. Anika and I did three full practice exams. Graph stuff finally clicked. I can feel the difference between understanding something and just memorizing it. This feels like understanding. I'm tired but less scared. Exam tomorrow morning.",
-    duration_seconds: 21, energy_level: 0.40, speaking_rate: 145, pause_ratio: 0.14, pitch_variance: 0.32,
-    sentiment_score: 0.1, sentiment_label: 'neutral',
-    entities: ['Anika'], topics: ['algorithms', 'graphs', 'exam prep', 'confidence'],
-    unresolved_threads: [], summary: 'Intensive prep with Anika, graph algorithms finally clicked.',
-  },
-  {
-    day: 12, created_at: daysAgo(12, 15, 0),
-    transcript: "Done. Both midterms done. Algorithms went well I think. The graph question was almost exactly what Anika and I practiced. I feel this huge weight lifted. Literally lighter. Went straight home and slept for four hours. Woke up disoriented but happy.",
-    duration_seconds: 20, energy_level: 0.55, speaking_rate: 138, pause_ratio: 0.18, pitch_variance: 0.28,
-    sentiment_score: 0.6, sentiment_label: 'positive',
-    entities: ['Anika'], topics: ['midterms done', 'relief', 'sleep', 'graphs'],
-    unresolved_threads: [], summary: 'Both midterms done, algorithms went well, massive relief.',
-  },
-  {
-    day: 13, created_at: daysAgo(13, 20, 0),
-    transcript: "Recovery day. Watched a movie. Ate real food for the first time in days. Anika and I got dinner and just talked about non-school stuff. She wants to work at a quant fund too. We might apply to the same places. That could be cool or competitive. Hopefully cool.",
-    duration_seconds: 22, energy_level: 0.58, speaking_rate: 132, pause_ratio: 0.20, pitch_variance: 0.25,
-    sentiment_score: 0.5, sentiment_label: 'positive',
-    entities: ['Anika'], topics: ['recovery', 'friendship', 'quant finance', 'careers'],
-    unresolved_threads: [], summary: 'Post-exam recovery, dinner with Anika, shared career interests.',
-  },
-  {
-    day: 14, created_at: daysAgo(14, 22, 15),
-    transcript: "Got the stats midterm back. B plus. I'll take it. The hypothesis testing question I was worried about was actually right the first time before I changed it. Classic. Professor Chen's NLP grades come out next week. That's the one that matters to me.",
-    duration_seconds: 19, energy_level: 0.52, speaking_rate: 140, pause_ratio: 0.16, pitch_variance: 0.28,
-    sentiment_score: 0.3, sentiment_label: 'positive',
-    entities: ['Professor Chen'], topics: ['grades', 'statistics', 'NLP'],
-    unresolved_threads: [], summary: 'Stats B+, original answer was right, waiting on NLP grade.',
-  },
-  {
-    day: 15, created_at: daysAgo(15, 21, 0),
-    transcript: "I realized I haven't talked to Jake in like a week and a half. We live together and we're basically strangers now. He's always in his room or out. I'm always at the library or with Anika. I should say something but I don't know what. Maybe it's just how it is now.",
-    duration_seconds: 21, energy_level: 0.40, speaking_rate: 128, pause_ratio: 0.24, pitch_variance: 0.25,
-    sentiment_score: -0.2, sentiment_label: 'negative',
-    entities: ['Jake', 'Anika'], topics: ['roommate distance', 'avoidance', 'social drift'],
-    unresolved_threads: ['Jake conflict'], summary: 'Realizing Jake has completely disappeared from daily life.',
-  },
-  {
-    day: 16, created_at: daysAgo(16, 22, 30),
-    transcript: "Professor Chen's office hours. She said my seminar participation is strong but my written analysis needs more rigor. She also mentioned a research assistant position opening up in her lab next quarter. I want that so badly. Need to make this final paper really good.",
-    duration_seconds: 22, energy_level: 0.60, speaking_rate: 145, pause_ratio: 0.14, pitch_variance: 0.32,
-    sentiment_score: 0.5, sentiment_label: 'positive',
-    entities: ['Professor Chen'], topics: ['office hours', 'research', 'RA position', 'writing'],
-    unresolved_threads: [], summary: 'Professor Chen feedback, RA position opportunity, motivated.',
-  },
-  {
-    day: 17, created_at: daysAgo(17, 23, 0),
-    transcript: "Working on the NLP final paper. Chose topic on sentiment analysis in financial text. Feels very on brand. Anika is helping me find datasets. The quant reading group met today and we discussed Kelly criterion for position sizing. My worlds are starting to overlap in a good way.",
-    duration_seconds: 23, energy_level: 0.55, speaking_rate: 140, pause_ratio: 0.16, pitch_variance: 0.30,
-    sentiment_score: 0.4, sentiment_label: 'positive',
-    entities: ['Anika'], topics: ['NLP paper', 'sentiment analysis', 'quant finance', 'Kelly criterion'],
-    unresolved_threads: [], summary: 'NLP paper on financial sentiment, interests converging.',
-  },
-  {
-    day: 18, created_at: daysAgo(18, 21, 15),
-    transcript: "Short one tonight. Tired. Paper is coming along. Ate dinner alone because Anika had a thing. Realized how much I depend on her for social interaction now that Jake and I don't talk. Should probably diversify my social portfolio. Ha. Quant brain is leaking into everything.",
-    duration_seconds: 16, energy_level: 0.35, speaking_rate: 125, pause_ratio: 0.22, pitch_variance: 0.22,
-    sentiment_score: -0.1, sentiment_label: 'neutral',
-    entities: ['Anika', 'Jake'], topics: ['loneliness', 'social dependency', 'humor'],
-    unresolved_threads: [], summary: 'Noting social isolation beyond Anika, self-aware humor about it.',
-  },
-  {
-    day: 19, created_at: daysAgo(19, 22, 0),
-    transcript: "Algorithms grade posted. A minus. Yes. Anika got an A. I'm happy for her and only a little competitive about it. The graph question carried me. Professor Chen also emailed about the RA position. Application is due next Friday. This is the thing I need to focus on.",
-    duration_seconds: 20, energy_level: 0.62, speaking_rate: 148, pause_ratio: 0.12, pitch_variance: 0.35,
-    sentiment_score: 0.6, sentiment_label: 'positive',
-    entities: ['Anika', 'Professor Chen'], topics: ['grades', 'algorithms', 'RA application'],
-    unresolved_threads: [], summary: 'A- in algorithms, RA application deadline set, motivated.',
-  },
-  {
-    day: 20, created_at: daysAgo(20, 21, 30),
-    transcript: "Submitted the RA application. Wrote about wanting to explore NLP applications in financial markets. Attached my sentiment analysis paper draft as a writing sample. It's not perfect but it's mine. Anika proofread it. She's been such a good friend this quarter. I should tell her that.",
-    duration_seconds: 22, energy_level: 0.58, speaking_rate: 135, pause_ratio: 0.18, pitch_variance: 0.28,
-    sentiment_score: 0.5, sentiment_label: 'positive',
-    entities: ['Anika', 'Professor Chen'], topics: ['RA application', 'NLP', 'financial markets', 'gratitude'],
-    unresolved_threads: [], summary: 'Submitted RA application, grateful for Anika.',
-  },
-  {
-    day: 21, created_at: daysAgo(21, 22, 0),
-    transcript: "End of the quarter reflection. The midterm weeks were rough but I came out stronger. My grades are solid. The RA thing could change everything. I still haven't fixed things with Jake and that bothers me more than I want to admit. Maybe next quarter. For now I'm proud of what I pushed through.",
-    duration_seconds: 25, energy_level: 0.55, speaking_rate: 130, pause_ratio: 0.20, pitch_variance: 0.28,
-    sentiment_score: 0.4, sentiment_label: 'positive',
-    entities: ['Jake'], topics: ['reflection', 'growth', 'grades', 'unresolved relationships'],
-    unresolved_threads: ['Jake conflict'], summary: 'Quarter reflection — growth through stress, Jake still unresolved.',
-  },
+// ══════════════════════════════════════════════════════
+// MAYA — STUDENT (34 entries)
+// ══════════════════════════════════════════════════════
+const maya=[
+{day:1,t:daysAgo(1,22,0),tr:"Good first week. Moved in with Jake and it's way better than dorms. He made pasta first night. Schedule heavy but manageable. Stats, algorithms, Chen's NLP seminar.",dur:28,e:0.72,sr:148,pr:0.12,pv:0.32,ss:0.7,sl:'positive',ent:['Jake','Professor Chen'],top:['new apartment','roommate','classes','NLP'],kw:['apartment','Jake','pasta','NLP','seminar','algorithms','stats'],thr:[],sum:'Happy with apartment, excited about NLP.',tone:'bright, chatty, enthusiastic',emj:emo({Happiness:68,Surprise:12,Neutral:14,Sadness:3,Fear:2,Anger:1})},
+{day:2,t:daysAgo(2,21,30),tr:"Campus fair with Jake. He signed up for intramural soccer. Found quant finance reading group. Met Anika in algorithms. We might study together. College feels right today.",dur:25,e:0.68,sr:142,pr:0.14,pv:0.30,ss:0.6,sl:'positive',ent:['Jake','Anika'],top:['campus life','quant finance','friends'],kw:['campus fair','quant','reading group','Anika','soccer'],thr:[],sum:'Campus fair, quant group, met Anika.',tone:'relaxed, happy, social',emj:emo({Happiness:62,Neutral:20,Surprise:10,Sadness:4,Fear:2,Anger:1,Disgust:1})},
+{day:3,t:daysAgo(3,23,15),tr:"Jake had people over. Fun but stayed up late. Chen's seminar at eight thirty and sixty pages on transformers to read. Speed reading in the morning.",dur:22,e:0.55,sr:150,pr:0.12,pv:0.35,ss:0.3,sl:'positive',ent:['Jake','Professor Chen'],top:['social life','sleep','transformers'],kw:['party','transformers','reading','sleep','seminar'],thr:[],sum:'Fun night, behind on readings.',tone:'amused, slightly worried, fast',emj:emo({Happiness:42,Neutral:28,Fear:15,Sadness:8,Surprise:5,Anger:1,Disgust:1})},
+{day:4,t:daysAgo(4,21,45),tr:"Study session with Anika. Tabulation for dynamic programming clicked. She's from Mumbai, did competitive math. Makes me feel behind but pushes me. Boba after.",dur:24,e:0.62,sr:140,pr:0.16,pv:0.28,ss:0.5,sl:'positive',ent:['Anika'],top:['studying','dynamic programming','algorithms'],kw:['Anika','dynamic programming','tabulation','boba','competitive'],thr:[],sum:'Great study session, DP clicking.',tone:'impressed, motivated, warm',emj:emo({Happiness:52,Neutral:25,Surprise:10,Fear:8,Sadness:3,Anger:1,Disgust:1})},
+{day:5,t:daysAgo(5,22,30),tr:"Chen announced midterm. Open note, time-pressured, forty percent. Stats midterm same week. Two exams in ten days. Made study calendar but looking at it is stressful.",dur:25,e:0.48,sr:155,pr:0.12,pv:0.38,ss:-0.1,sl:'neutral',ent:['Professor Chen'],top:['midterms','study planning','stress'],kw:['midterm','forty percent','study calendar','stats'],thr:[],sum:'Two midterms same week, stress building.',tone:'tense, methodical, shaky',emj:emo({Fear:32,Neutral:28,Sadness:15,Happiness:12,Surprise:8,Anger:3,Disgust:2})},
+{day:6,t:daysAgo(6,20,0),tr:"Something happened with Jake. Moved my stuff off the desk without asking. Brought it up and he got defensive. Said I was overreacting. Maybe. But felt dismissive. Library instead.",dur:23,e:0.40,sr:135,pr:0.22,pv:0.35,ss:-0.3,sl:'negative',ent:['Jake'],top:['roommate conflict','boundaries'],kw:['Jake','desk','defensive','overreacting','dismissive','library'],thr:['Jake conflict'],sum:'Jake conflict, retreated to library.',tone:'hurt, second-guessing, withdrawn',emj:emo({Sadness:30,Anger:22,Fear:15,Neutral:22,Happiness:5,Surprise:4,Disgust:2})},
+{day:7,t:daysAgo(7,23,0),tr:"Full library day. Practice exam with Anika. Got most of it but blanked on graph traversal. Need BFS and DFS review. Brain full. Haven't seen Jake. It's fine.",dur:22,e:0.38,sr:148,pr:0.18,pv:0.30,ss:-0.1,sl:'neutral',ent:['Anika'],top:['studying','algorithms','graphs'],kw:['library','BFS','DFS','practice exam','graph'],thr:[],sum:'Practice exam, graphs weak, avoiding Jake.',tone:'focused, clipped, strained',emj:emo({Fear:25,Neutral:32,Sadness:18,Happiness:12,Anger:8,Surprise:3,Disgust:2})},
+{day:8,t:daysAgo(8,22,30),tr:"Midterm week Monday. Anxiety in my chest like a low hum. Six hours studying, still not ready for stats. Confidence intervals confusing. Anika stressed too.",dur:26,e:0.35,sr:160,pr:0.10,pv:0.42,ss:-0.4,sl:'negative',ent:['Anika'],top:['anxiety','midterms','statistics'],kw:['anxiety','chest','confidence intervals','stats','alone'],thr:[],sum:'Physical anxiety building, stats weak.',tone:'tight, rapid, breathless',emj:emo({Fear:45,Sadness:22,Neutral:18,Anger:5,Happiness:5,Surprise:3,Disgust:2})},
+{day:9,t:daysAgo(9,7,0),tr:"Didn't sleep. Studied until three AM. Three coffees and it's 7AM. Hands shaking. Exam in two days.",dur:14,e:0.22,sr:168,pr:0.06,pv:0.48,ss:-0.5,sl:'negative',ent:[],top:['insomnia','caffeine','anxiety'],kw:['insomnia','coffee','shaking','three AM','exam'],thr:[],sum:'Sleep-deprived, overcaffeinated, tremors.',tone:'frantic, staccato, wired',emj:emo({Fear:52,Sadness:18,Anger:10,Neutral:12,Happiness:3,Surprise:3,Disgust:2})},
+{day:9,t:daysAgo(9,23,45),tr:"Fell asleep during NLP lecture. Chen noticed. Didn't say anything but I saw the look. Too much coffee. Need to sleep tonight.",dur:18,e:0.25,sr:155,pr:0.08,pv:0.45,ss:-0.5,sl:'negative',ent:['Professor Chen'],top:['sleep','shame','NLP'],kw:['fell asleep','lecture','Chen','coffee','shame'],thr:[],sum:'Fell asleep in lecture, embarrassed.',tone:'mortified, exhausted, quick',emj:emo({Sadness:32,Fear:30,Neutral:18,Anger:8,Surprise:8,Happiness:2,Disgust:2})},
+{day:10,t:daysAgo(10,18,0),tr:"Stats midterm done. Maybe okay. Changed answer on hypothesis testing twice. When I change answers it's usually wrong. Algorithms Thursday. No rest.",dur:20,e:0.32,sr:158,pr:0.10,pv:0.40,ss:-0.2,sl:'negative',ent:[],top:['midterm','statistics','second-guessing'],kw:['hypothesis testing','changed answer','no rest','algorithms'],thr:[],sum:'Stats done, second-guessing, no rest.',tone:'rushed, anxious, clipped',emj:emo({Fear:35,Neutral:25,Sadness:20,Happiness:8,Anger:5,Surprise:5,Disgust:2})},
+{day:10,t:daysAgo(10,23,0),tr:"Final algorithms prep with Anika. Practice three. Got graph question right. BFS clicked. Less panicked. Eating crackers because I forgot dinner.",dur:18,e:0.38,sr:150,pr:0.12,pv:0.35,ss:0.0,sl:'neutral',ent:['Anika'],top:['algorithms prep','graphs','food'],kw:['BFS','practice exam','crackers','forgot dinner'],thr:[],sum:'Late prep, BFS clicked, forgot to eat.',tone:'determined, fragile, focused',emj:emo({Fear:28,Neutral:30,Happiness:18,Sadness:12,Surprise:5,Anger:5,Disgust:2})},
+{day:11,t:daysAgo(11,21,30),tr:"Three practice exams with Anika. Graph stuff clicked. Difference between understanding and memorizing. This feels like understanding. Tired but less scared. Tomorrow morning.",dur:21,e:0.40,sr:145,pr:0.14,pv:0.32,ss:0.1,sl:'neutral',ent:['Anika'],top:['algorithms','graphs','exam prep'],kw:['understanding','memorizing','graphs','tomorrow'],thr:[],sum:'Intensive prep, graphs finally clicked.',tone:'resolute, quiet, ready',emj:emo({Neutral:32,Happiness:22,Fear:22,Sadness:10,Surprise:8,Anger:4,Disgust:2})},
+{day:12,t:daysAgo(12,15,0),tr:"Done. Both midterms done. Algorithms went well. Graph question was almost exactly what we practiced. Huge weight lifted. Slept four hours. Woke up disoriented but happy.",dur:20,e:0.58,sr:138,pr:0.18,pv:0.28,ss:0.6,sl:'positive',ent:['Anika'],top:['midterms done','relief','sleep'],kw:['done','relief','lighter','graph question','happy'],thr:[],sum:'Both midterms done, massive relief.',tone:'giddy, relieved, laughing',emj:emo({Happiness:62,Surprise:15,Neutral:14,Sadness:4,Fear:3,Anger:1,Disgust:1})},
+{day:13,t:daysAgo(13,20,0),tr:"Recovery. Movie. Real food. Dinner with Anika talking non-school stuff. She wants quant fund too. Might apply same places. Hopefully cool not competitive.",dur:22,e:0.58,sr:132,pr:0.20,pv:0.25,ss:0.5,sl:'positive',ent:['Anika'],top:['recovery','friendship','quant finance'],kw:['movie','dinner','quant fund','Anika','recovery'],thr:[],sum:'Post-exam recovery, career talk with Anika.',tone:'relaxed, chatty, relieved',emj:emo({Happiness:55,Neutral:25,Surprise:8,Sadness:5,Fear:4,Anger:2,Disgust:1})},
+{day:14,t:daysAgo(14,22,15),tr:"Stats back. B plus. Hypothesis question was right the first time before I changed it. Classic. Chen's NLP grades next week.",dur:19,e:0.52,sr:140,pr:0.16,pv:0.28,ss:0.3,sl:'positive',ent:['Professor Chen'],top:['grades','statistics','NLP'],kw:['B plus','hypothesis testing','changed answer','Chen'],thr:[],sum:'Stats B+, original answer was right.',tone:'wry, amused, anticipating',emj:emo({Happiness:40,Neutral:30,Surprise:12,Sadness:8,Fear:5,Anger:3,Disgust:2})},
+{day:15,t:daysAgo(15,21,0),tr:"Haven't talked to Jake in a week and a half. We live together and we're strangers. He's in his room or out. I'm at library or with Anika. Should say something but don't know what.",dur:21,e:0.40,sr:128,pr:0.24,pv:0.25,ss:-0.2,sl:'negative',ent:['Jake','Anika'],top:['roommate distance','avoidance'],kw:['Jake','strangers','distance','Anika','avoidance'],thr:['Jake conflict'],sum:'Jake disappeared from daily life.',tone:'pensive, guilty, quiet',emj:emo({Sadness:32,Neutral:30,Fear:12,Happiness:10,Anger:8,Surprise:5,Disgust:3})},
+{day:16,t:daysAgo(16,22,30),tr:"Chen office hours. Participation strong but writing needs rigor. RA position opening next quarter. I want that badly. Final paper needs to be really good.",dur:22,e:0.60,sr:145,pr:0.14,pv:0.32,ss:0.5,sl:'positive',ent:['Professor Chen'],top:['office hours','research','RA position'],kw:['RA position','rigor','lab','final paper','Chen'],thr:[],sum:'RA opportunity, motivated.',tone:'eager, focused, ambitious',emj:emo({Happiness:48,Fear:18,Neutral:20,Surprise:8,Sadness:3,Anger:2,Disgust:1})},
+{day:17,t:daysAgo(17,23,0),tr:"NLP paper on sentiment analysis in financial text. Anika helping find datasets. Quant reading group discussed Kelly criterion. My worlds overlapping in the best way.",dur:23,e:0.55,sr:140,pr:0.16,pv:0.30,ss:0.4,sl:'positive',ent:['Anika'],top:['NLP paper','sentiment analysis','quant finance','Kelly criterion'],kw:['sentiment analysis','financial text','Kelly criterion','datasets'],thr:[],sum:'NLP paper on financial sentiment, interests converging.',tone:'excited, nerdy, flowing',emj:emo({Happiness:45,Neutral:28,Surprise:12,Fear:8,Sadness:4,Anger:2,Disgust:1})},
+{day:18,t:daysAgo(18,21,15),tr:"Short. Tired. Paper coming along. Ate alone. Realized how much I depend on Anika now that Jake and I don't talk. Should diversify my social portfolio. Quant brain leaking.",dur:16,e:0.35,sr:125,pr:0.22,pv:0.22,ss:-0.1,sl:'neutral',ent:['Anika','Jake'],top:['loneliness','social dependency'],kw:['alone','social portfolio','dependency','quant brain'],thr:[],sum:'Noting social isolation beyond Anika.',tone:'wry, self-aware, subdued',emj:emo({Sadness:28,Neutral:32,Happiness:15,Fear:10,Surprise:8,Anger:4,Disgust:3})},
+{day:19,t:daysAgo(19,22,0),tr:"Algorithms A minus. Yes. Anika got A. Happy for her, little competitive. Graph question carried me. Chen emailed about RA. Application due Friday.",dur:20,e:0.62,sr:148,pr:0.12,pv:0.35,ss:0.6,sl:'positive',ent:['Anika','Professor Chen'],top:['grades','algorithms','RA application'],kw:['A minus','graph question','RA application','competitive'],thr:[],sum:'A- in algorithms, RA deadline set.',tone:'pumped, competitive, determined',emj:emo({Happiness:58,Surprise:15,Neutral:15,Fear:5,Sadness:4,Anger:2,Disgust:1})},
+{day:20,t:daysAgo(20,21,30),tr:"Submitted RA application. NLP in financial markets. Attached sentiment paper draft. Not perfect but mine. Anika proofread. She's been such a good friend. Should tell her.",dur:22,e:0.58,sr:135,pr:0.18,pv:0.28,ss:0.5,sl:'positive',ent:['Anika','Professor Chen'],top:['RA application','NLP','gratitude'],kw:['RA application','NLP','financial markets','proofread','gratitude'],thr:[],sum:'Submitted RA application, grateful for Anika.',tone:'proud, warm, earnest',emj:emo({Happiness:52,Neutral:25,Surprise:8,Sadness:8,Fear:4,Anger:2,Disgust:1})},
+{day:21,t:daysAgo(21,22,0),tr:"Quarter reflection. Midterms were rough but I'm stronger. Grades solid. RA could change everything. Still haven't fixed Jake. Bothers me more than I admit. Maybe next quarter. Proud of what I pushed through.",dur:25,e:0.55,sr:130,pr:0.20,pv:0.28,ss:0.4,sl:'positive',ent:['Jake'],top:['reflection','growth','unresolved'],kw:['reflection','proud','growth','Jake','unresolved','stronger'],thr:['Jake conflict'],sum:'Quarter reflection, growth but Jake unresolved.',tone:'reflective, mature, bittersweet',emj:emo({Happiness:35,Neutral:25,Sadness:18,Surprise:8,Fear:8,Anger:4,Disgust:2})},
+{day:23,t:daysAgo(23,20,0),tr:"Chen offered me the RA position. I said oh my god three times. She laughed. First time something academic felt like it mattered beyond a grade.",dur:22,e:0.78,sr:155,pr:0.10,pv:0.42,ss:0.9,sl:'positive',ent:['Professor Chen'],top:['RA position','celebration'],kw:['RA position','oh my god','offered','mattered'],thr:[],sum:'Got the RA position.',tone:'ecstatic, breathless, grinning',emj:emo({Happiness:78,Surprise:12,Neutral:5,Sadness:2,Fear:1,Anger:1,Disgust:1})},
+{day:25,t:daysAgo(25,22,0),tr:"Told mom about RA. She cried. Good way. Asked about Jake and I deflected. Should stop doing that. If I can be honest here I should be honest with her.",dur:20,e:0.55,sr:132,pr:0.20,pv:0.28,ss:0.3,sl:'positive',ent:['Mom','Jake'],top:['family','honesty','RA'],kw:['Mom','crying','RA','Jake','deflected','honest'],thr:['Jake conflict'],sum:'Mom happy about RA, deflected Jake questions.',tone:'warm, slightly guilty, tender',emj:emo({Happiness:40,Sadness:20,Neutral:22,Surprise:8,Fear:5,Anger:3,Disgust:2})},
+{day:28,t:daysAgo(28,21,0),tr:"Ran into Jake in kitchen. Hey. Hey. Two people in single syllables. Wrote him an apology text. Haven't sent it. Sitting in drafts.",dur:20,e:0.42,sr:125,pr:0.22,pv:0.25,ss:-0.1,sl:'neutral',ent:['Jake'],top:['roommate','unsent message'],kw:['Jake','hey','apologizing','drafts','unsent'],thr:['Jake conflict'],sum:'Minimal Jake interaction, unsent apology.',tone:'conflicted, halting, uncertain',emj:emo({Sadness:30,Neutral:28,Fear:15,Happiness:12,Anger:8,Surprise:5,Disgust:2})},
+{day:30,t:daysAgo(30,22,0),tr:"Sent it. Jake replied with a paragraph. Said he's sorry too. The desk thing was about his parents' divorce not about me. Dinner tomorrow. I feel lighter than I have in weeks. Some threads do resolve if you pull on them.",dur:25,e:0.62,sr:138,pr:0.16,pv:0.30,ss:0.6,sl:'positive',ent:['Jake'],top:['reconciliation','resolution'],kw:['Jake','text','apology','divorce','dinner','lighter','resolve'],thr:[],sum:'Sent apology, Jake opened up, getting dinner.',tone:'relieved, hopeful, emotional',emj:emo({Happiness:52,Surprise:18,Neutral:15,Sadness:8,Fear:3,Anger:2,Disgust:2})},
 ];
 
-// ============================================
-// PERSONA 3 — JORDAN (The Creative)
-// Arc: Creative block then breakthrough
-// Key: irregular recording times, "the project" vague for 2 weeks
-// High pitch variance (expressive), vocabulary-rich entries
-// Entities: Luis (photographer), Mira (gallery owner)
-// Insight: most energetic entries happen late at night
-// ============================================
-const jordanEntries = [
-  {
-    day: 1, created_at: daysAgo(1, 23, 30),
-    transcript: "Late night. The apartment smells like turpentine which means I at least opened the paints today even if I didn't use them. I've been circling around the project for weeks now. I know what I want it to feel like but I can't find the entry point. It's like the idea is a room I can see through frosted glass.",
-    duration_seconds: 28, energy_level: 0.50, speaking_rate: 125, pause_ratio: 0.22, pitch_variance: 0.45,
-    sentiment_score: -0.1, sentiment_label: 'neutral',
-    entities: [], topics: ['creative block', 'the project', 'painting', 'metaphor'],
-    unresolved_threads: ['the project'], summary: 'Circling the project, can sense it but can\'t start, poetic about the frustration.',
-  },
-  {
-    day: 2, created_at: daysAgo(2, 9, 15),
-    transcript: "Morning for once. Went on a walk before the city got loud. There's a mural going up on Figueroa that stopped me. Massive. Three stories. The scale of someone else's ambition is either inspiring or crushing depending on the day. Today it was inspiring. I took photos. Maybe they'll unlock something.",
-    duration_seconds: 25, energy_level: 0.58, speaking_rate: 130, pause_ratio: 0.20, pitch_variance: 0.42,
-    sentiment_score: 0.3, sentiment_label: 'positive',
-    entities: [], topics: ['morning walk', 'mural', 'inspiration', 'photography'],
-    unresolved_threads: [], summary: 'Morning walk, inspired by a massive mural, gathering input.',
-  },
-  {
-    day: 3, created_at: daysAgo(3, 2, 0),
-    transcript: "It's two AM and I just spent three hours rearranging my studio instead of working on the project. Classic avoidance behavior dressed up as productivity. The space looks great though. I found an old sketchbook from 2023 and some of those drawings are better than what I'm making now. That's a depressing thought.",
-    duration_seconds: 27, energy_level: 0.62, speaking_rate: 142, pause_ratio: 0.14, pitch_variance: 0.48,
-    sentiment_score: -0.3, sentiment_label: 'negative',
-    entities: [], topics: ['avoidance', 'studio', 'procrastination', 'self-comparison'],
-    unresolved_threads: ['the project'], summary: '2AM avoidance reorganization, comparing current work unfavorably to 2023.',
-  },
-  {
-    day: 4, created_at: daysAgo(4, 16, 45),
-    transcript: "Afternoon. Coffee shop. Watching people and sketching faces in my notebook. Not for any reason. Just to keep the hands moving. A woman at the next table asked what I was drawing and I showed her and she said it looked like her ex-husband and we both laughed. Human connection through accidental portraiture.",
-    duration_seconds: 24, energy_level: 0.55, speaking_rate: 135, pause_ratio: 0.18, pitch_variance: 0.40,
-    sentiment_score: 0.4, sentiment_label: 'positive',
-    entities: [], topics: ['sketching', 'people watching', 'humor', 'connection'],
-    unresolved_threads: [], summary: 'Sketching in coffee shop, random funny human moment.',
-  },
-  {
-    day: 5, created_at: daysAgo(5, 22, 15),
-    transcript: "Met a photographer named Luis at a gallery opening tonight. His work is all long exposure urban landscapes. Highways at night that look like circulatory systems. We talked for an hour about how constraints create better work. He shoots only on film. Only at night. The limitations are the art. I need constraints for the project.",
-    duration_seconds: 30, energy_level: 0.72, speaking_rate: 148, pause_ratio: 0.10, pitch_variance: 0.50,
-    sentiment_score: 0.6, sentiment_label: 'positive',
-    entities: ['Luis'], topics: ['photography', 'constraints', 'gallery', 'artistic philosophy'],
-    unresolved_threads: [], summary: 'Met Luis the photographer, conversation about constraints as creative fuel.',
-  },
-  {
-    day: 6, created_at: daysAgo(6, 1, 30),
-    transcript: "One thirty AM. I can't sleep because of what Luis said about constraints. What if the project's constraint is time. Thirty seconds of something. A painting that takes exactly thirty seconds to see. A video that's exactly thirty seconds. I don't know what this means yet but it's buzzing.",
-    duration_seconds: 22, energy_level: 0.68, speaking_rate: 155, pause_ratio: 0.08, pitch_variance: 0.52,
-    sentiment_score: 0.5, sentiment_label: 'positive',
-    entities: ['Luis'], topics: ['insomnia', 'constraints', 'the project', 'time', 'ideas'],
-    unresolved_threads: ['the project'], summary: 'Late night idea spark — what if the constraint is 30 seconds.',
-  },
-  {
-    day: 7, created_at: daysAgo(7, 11, 0),
-    transcript: "Lazy Sunday. Didn't create anything. Read a book. Cooked something elaborate for no reason. Roasted eggplant with tahini and pomegranate seeds. Sometimes the best creative act is not creating. Letting the soil rest. That's what I'm telling myself anyway.",
-    duration_seconds: 20, energy_level: 0.45, speaking_rate: 118, pause_ratio: 0.25, pitch_variance: 0.35,
-    sentiment_score: 0.2, sentiment_label: 'positive',
-    entities: [], topics: ['rest', 'cooking', 'reading', 'creative philosophy'],
-    unresolved_threads: [], summary: 'Rest day, elaborate cooking, philosophical about letting ideas settle.',
-  },
-  {
-    day: 8, created_at: daysAgo(8, 20, 0),
-    transcript: "Back in the studio. Started ten small canvases. Each one I'm giving myself exactly thirty seconds to make a mark. No planning, no sketching first. Just thirty seconds of instinct. Most of them are garbage but two of them have something. A gesture that feels alive. This might be the project.",
-    duration_seconds: 27, energy_level: 0.75, speaking_rate: 150, pause_ratio: 0.10, pitch_variance: 0.48,
-    sentiment_score: 0.7, sentiment_label: 'positive',
-    entities: [], topics: ['painting', 'the project', 'constraint', 'instinct', 'breakthrough'],
-    unresolved_threads: [], summary: 'Breakthrough — 30-second constraint canvases, two have real energy.',
-  },
-  {
-    day: 9, created_at: daysAgo(9, 2, 30),
-    transcript: "Two thirty AM and I just finished another twenty canvases. I'm covered in paint. My back hurts. I'm grinning. The thirty second rule is everything. Some of these are the best things I've made in years. The constraint removed the overthinking. Luis was right. Limitations are the art.",
-    duration_seconds: 25, energy_level: 0.88, speaking_rate: 158, pause_ratio: 0.06, pitch_variance: 0.55,
-    sentiment_score: 0.9, sentiment_label: 'positive',
-    entities: ['Luis'], topics: ['painting', 'breakthrough', 'creative flow', 'late night', 'constraints'],
-    unresolved_threads: [], summary: '2:30AM creative explosion, 20 canvases, best work in years, covered in paint.',
-  },
-  {
-    day: 10, created_at: daysAgo(10, 14, 0),
-    transcript: "Crashed hard today. Woke up at noon with paint on my pillowcase. The canvases from last night are drying on every surface. In the daylight some of them are less exciting than they felt at two AM. But three or four are genuinely good. I need to curate ruthlessly.",
-    duration_seconds: 22, energy_level: 0.40, speaking_rate: 125, pause_ratio: 0.22, pitch_variance: 0.32,
-    sentiment_score: 0.2, sentiment_label: 'positive',
-    entities: [], topics: ['morning after', 'curation', 'editing', 'self-critique'],
-    unresolved_threads: [], summary: 'Post-flow crash, editing with fresh eyes, 3-4 pieces are keepers.',
-  },
-  {
-    day: 11, created_at: daysAgo(11, 19, 30),
-    transcript: "Texted Luis photos of the canvases. He responded with a voice note that was basically just him yelling 'YES' for ten seconds. Then he asked if I'd be interested in a joint show. His long exposure photos next to my thirty second paintings. Time as a theme. I said yes before I even thought about it.",
-    duration_seconds: 26, energy_level: 0.78, speaking_rate: 152, pause_ratio: 0.08, pitch_variance: 0.50,
-    sentiment_score: 0.8, sentiment_label: 'positive',
-    entities: ['Luis'], topics: ['collaboration', 'exhibition', 'time theme', 'photography'],
-    unresolved_threads: [], summary: 'Luis proposed joint show — his long exposures + 30-second paintings.',
-  },
-  {
-    day: 12, created_at: daysAgo(12, 23, 0),
-    transcript: "Started writing an artist statement for the show. Hate writing artist statements. Every word feels pretentious. How do you explain something that only makes sense as a feeling. The paintings are about urgency and instinct and the terror of uncommitted marks. See. Pretentious.",
-    duration_seconds: 22, energy_level: 0.52, speaking_rate: 138, pause_ratio: 0.18, pitch_variance: 0.42,
-    sentiment_score: 0.0, sentiment_label: 'neutral',
-    entities: [], topics: ['artist statement', 'writing', 'self-awareness', 'humor'],
-    unresolved_threads: [], summary: 'Struggling with artist statement, self-deprecating about art language.',
-  },
-  {
-    day: 13, created_at: daysAgo(13, 10, 0),
-    transcript: "Morning studio session. Made five more canvases. The constraint is becoming second nature. I'm starting to know what the brush will do in thirty seconds. Which means I need to change something. Add a new rule maybe. Or a different tool. Comfort is the enemy of good constraint art.",
-    duration_seconds: 23, energy_level: 0.65, speaking_rate: 140, pause_ratio: 0.14, pitch_variance: 0.40,
-    sentiment_score: 0.4, sentiment_label: 'positive',
-    entities: [], topics: ['painting', 'constraints', 'evolution', 'process'],
-    unresolved_threads: [], summary: 'Constraint becoming too easy, needs to evolve the rules.',
-  },
-  {
-    day: 14, created_at: daysAgo(14, 2, 15),
-    transcript: "New rule. Left hand only. I'm right handed. The thirty second canvases with my left hand are chaotic and unpredictable and some of them are incredible. One looks like a city on fire seen from above. My left hand has opinions my right hand doesn't know about.",
-    duration_seconds: 24, energy_level: 0.82, speaking_rate: 155, pause_ratio: 0.08, pitch_variance: 0.52,
-    sentiment_score: 0.7, sentiment_label: 'positive',
-    entities: [], topics: ['left hand', 'new constraint', 'chaos', 'discovery'],
-    unresolved_threads: [], summary: '2AM experiment — left hand only canvases producing unexpected results.',
-  },
-  {
-    day: 15, created_at: daysAgo(15, 17, 0),
-    transcript: "Met Mira today. She runs a small gallery in the arts district. Luis introduced us. She wants to see the work when it's ready. She said the thirty second concept reminds her of Gutai group performance art. I pretended I knew what that was and then spent an hour reading about it after. It's actually relevant.",
-    duration_seconds: 27, energy_level: 0.62, speaking_rate: 142, pause_ratio: 0.14, pitch_variance: 0.42,
-    sentiment_score: 0.5, sentiment_label: 'positive',
-    entities: ['Mira', 'Luis'], topics: ['gallery', 'Gutai', 'art history', 'networking'],
-    unresolved_threads: [], summary: 'Met gallery owner Mira through Luis, discovered Gutai connection.',
-  },
-  {
-    day: 16, created_at: daysAgo(16, 22, 45),
-    transcript: "Hit a wall today. Made eight canvases and threw away six. The left hand trick is becoming a crutch. I'm manufacturing chaos instead of finding it. Need to sit with the discomfort of not having a trick. Just be in the thirty seconds with nothing but attention.",
-    duration_seconds: 22, energy_level: 0.38, speaking_rate: 128, pause_ratio: 0.24, pitch_variance: 0.35,
-    sentiment_score: -0.2, sentiment_label: 'negative',
-    entities: [], topics: ['creative block', 'self-critique', 'authenticity', 'crutches'],
-    unresolved_threads: [], summary: 'Mini-block, recognizing the left hand gimmick became a crutch.',
-  },
-  {
-    day: 17, created_at: daysAgo(17, 3, 0),
-    transcript: "Three AM. Just made the best piece in the series. No trick. No left hand. No rule except thirty seconds. I closed my eyes for the first fifteen seconds and opened them for the last fifteen. The result is half dream half intention. This is what the show should be about. The line between control and surrender.",
-    duration_seconds: 28, energy_level: 0.90, speaking_rate: 148, pause_ratio: 0.08, pitch_variance: 0.55,
-    sentiment_score: 0.9, sentiment_label: 'positive',
-    entities: [], topics: ['breakthrough', 'eyes closed', 'control vs surrender', 'best piece'],
-    unresolved_threads: [], summary: '3AM — best piece yet, eyes closed then open, found the show\'s thesis.',
-  },
-  {
-    day: 18, created_at: daysAgo(18, 12, 0),
-    transcript: "Noon. Texted Mira the photos. She called within ten minutes. She wants to do the show in six weeks. Luis is in. I'm in. She said she'll handle promotion if we handle installation. This is really happening. I feel like I'm standing at the edge of something.",
-    duration_seconds: 22, energy_level: 0.75, speaking_rate: 150, pause_ratio: 0.10, pitch_variance: 0.48,
-    sentiment_score: 0.8, sentiment_label: 'positive',
-    entities: ['Mira', 'Luis'], topics: ['gallery show', 'planning', 'momentum', 'future'],
-    unresolved_threads: [], summary: 'Gallery show confirmed in 6 weeks, everything falling into place.',
-  },
-  {
-    day: 19, created_at: daysAgo(19, 21, 0),
-    transcript: "Spent the day selecting which pieces make the cut. Forty seven canvases total. Need to get it down to twenty. Each one I remove hurts a little. But the show needs a clear arc. Beginning constraint. Middle chaos. End surrender. That's the narrative.",
-    duration_seconds: 23, energy_level: 0.60, speaking_rate: 132, pause_ratio: 0.18, pitch_variance: 0.38,
-    sentiment_score: 0.4, sentiment_label: 'positive',
-    entities: [], topics: ['curation', 'show narrative', 'editing', 'constraint-chaos-surrender'],
-    unresolved_threads: [], summary: 'Curating 47 → 20 pieces, found narrative arc for the show.',
-  },
-  {
-    day: 20, created_at: daysAgo(20, 1, 0),
-    transcript: "Luis came over to look at the selections. He's printing his photos at four by six feet. Next to my twelve by twelve inch canvases the scale contrast is going to be dramatic. We talked about how his work captures hours of accumulated light and mine captures thirty seconds of accumulated instinct. Time as the medium not the subject.",
-    duration_seconds: 29, energy_level: 0.72, speaking_rate: 140, pause_ratio: 0.14, pitch_variance: 0.45,
-    sentiment_score: 0.7, sentiment_label: 'positive',
-    entities: ['Luis'], topics: ['collaboration', 'scale', 'time', 'artistic dialogue'],
-    unresolved_threads: [], summary: 'Planning session with Luis, scale contrast between works, time as medium.',
-  },
-  {
-    day: 21, created_at: daysAgo(21, 23, 0),
-    transcript: "Three weeks ago I couldn't start. Now I have a show in five weeks and forty seven canvases and a collaborator and a gallery. The block wasn't the absence of ideas. It was the presence of too many without a container. The thirty second constraint was the container. Everything I needed was already here. I just needed a frame to see it through.",
-    duration_seconds: 30, energy_level: 0.70, speaking_rate: 128, pause_ratio: 0.18, pitch_variance: 0.42,
-    sentiment_score: 0.7, sentiment_label: 'positive',
-    entities: ['Luis', 'Mira'], topics: ['reflection', 'creative block resolved', 'constraints', 'gratitude'],
-    unresolved_threads: [], summary: 'Three-week reflection — from block to gallery show, constraint was the key.',
-  },
+// ══════════════════════════════════════════════════════
+// JORDAN — CREATIVE (33 entries)
+// ══════════════════════════════════════════════════════
+const jordan=[
+{day:1,t:daysAgo(1,23,30),tr:"Late night. Apartment smells like turpentine. Been circling the project for weeks. Know what I want it to feel like but can't find the entry point. Like a room through frosted glass.",dur:28,e:0.50,sr:125,pr:0.22,pv:0.45,ss:-0.1,sl:'neutral',ent:[],top:['creative block','the project','painting'],kw:['turpentine','circling','frosted glass','entry point','the project'],thr:['the project'],sum:'Circling the project, poetic frustration.',tone:'poetic, restless, searching',emj:emo({Sadness:25,Neutral:30,Happiness:12,Fear:18,Surprise:8,Anger:5,Disgust:2})},
+{day:2,t:daysAgo(2,9,15),tr:"Morning walk before the city got loud. Mural on Figueroa. Three stories. Scale of someone else's ambition. Today it was inspiring. Took photos.",dur:25,e:0.58,sr:130,pr:0.20,pv:0.42,ss:0.3,sl:'positive',ent:[],top:['morning walk','mural','inspiration'],kw:['mural','Figueroa','ambition','inspiring','photos','scale'],thr:[],sum:'Morning walk, inspired by mural.',tone:'observant, expansive, contemplative',emj:emo({Happiness:35,Neutral:28,Surprise:18,Sadness:10,Fear:5,Anger:2,Disgust:2})},
+{day:3,t:daysAgo(3,2,0),tr:"Two AM. Three hours rearranging studio instead of the project. Classic avoidance as productivity. Found old 2023 sketchbook. Some drawings better than current work. Depressing.",dur:27,e:0.62,sr:142,pr:0.14,pv:0.48,ss:-0.3,sl:'negative',ent:[],top:['avoidance','studio','self-comparison'],kw:['avoidance','studio','2023','sketchbook','productivity','depressing'],thr:['the project'],sum:'2AM avoidance, comparing to old work.',tone:'self-deprecating, manic, restless',emj:emo({Sadness:32,Anger:15,Neutral:22,Happiness:12,Fear:10,Surprise:5,Disgust:4})},
+{day:4,t:daysAgo(4,16,45),tr:"Coffee shop sketching faces. Woman said my drawing looked like her ex-husband. We both laughed. Human connection through accidental portraiture.",dur:24,e:0.55,sr:135,pr:0.18,pv:0.40,ss:0.4,sl:'positive',ent:[],top:['sketching','humor','connection'],kw:['coffee shop','sketching','faces','laughed','portraiture'],thr:[],sum:'Sketching, random funny moment.',tone:'amused, observant, light',emj:emo({Happiness:48,Neutral:25,Surprise:15,Sadness:5,Fear:3,Anger:2,Disgust:2})},
+{day:5,t:daysAgo(5,22,15),tr:"Met Luis at a gallery opening. Long exposure urban landscapes. Highways at night like circulatory systems. We talked an hour about constraints creating better work. He shoots only film. Only at night. Limitations are the art. I need constraints.",dur:30,e:0.72,sr:148,pr:0.10,pv:0.50,ss:0.6,sl:'positive',ent:['Luis'],top:['photography','constraints','gallery'],kw:['Luis','constraints','long exposure','film','limitations','circulatory'],thr:[],sum:'Met Luis, constraints as creative fuel.',tone:'animated, passionate, rapid',emj:emo({Happiness:55,Surprise:20,Neutral:15,Sadness:3,Fear:3,Anger:2,Disgust:2})},
+{day:6,t:daysAgo(6,1,30),tr:"One thirty AM. Can't sleep. What if the constraint is time. Thirty seconds. A painting in thirty seconds. A video in thirty seconds. Don't know what it means but it's buzzing.",dur:22,e:0.68,sr:155,pr:0.08,pv:0.52,ss:0.5,sl:'positive',ent:['Luis'],top:['insomnia','constraints','time'],kw:['thirty seconds','constraint','time','buzzing','painting'],thr:['the project'],sum:'Late night spark — 30 seconds as constraint.',tone:'electric, breathless, eureka',emj:emo({Happiness:42,Surprise:30,Neutral:15,Fear:8,Sadness:3,Anger:1,Disgust:1})},
+{day:7,t:daysAgo(7,11,0),tr:"Lazy Sunday. Read a book. Cooked eggplant with tahini and pomegranate. Sometimes the best creative act is not creating. Letting the soil rest.",dur:20,e:0.45,sr:118,pr:0.25,pv:0.35,ss:0.2,sl:'positive',ent:[],top:['rest','cooking','philosophy'],kw:['rest','eggplant','tahini','soil','Sunday'],thr:[],sum:'Rest day, letting ideas settle.',tone:'languid, philosophical, calm',emj:emo({Neutral:35,Happiness:32,Sadness:10,Surprise:10,Fear:5,Anger:5,Disgust:3})},
+{day:8,t:daysAgo(8,20,0),tr:"Back in studio. Ten small canvases. Thirty seconds each. No planning. Just instinct. Most garbage but two have something. A gesture that feels alive. This might be the project.",dur:27,e:0.75,sr:150,pr:0.10,pv:0.48,ss:0.7,sl:'positive',ent:[],top:['painting','the project','constraint','breakthrough'],kw:['thirty seconds','canvases','instinct','alive','gesture','the project'],thr:[],sum:'Breakthrough — 30-second canvases.',tone:'excited, physical, breathless',emj:emo({Happiness:62,Surprise:18,Neutral:12,Sadness:3,Fear:3,Anger:1,Disgust:1})},
+{day:9,t:daysAgo(9,2,30),tr:"Two thirty AM. Another twenty canvases. Covered in paint. Back hurts. Grinning. The thirty second rule is everything. Some are the best things I've made in years. Constraint removed the overthinking. Luis was right.",dur:25,e:0.88,sr:158,pr:0.06,pv:0.55,ss:0.9,sl:'positive',ent:['Luis'],top:['painting','breakthrough','creative flow'],kw:['thirty seconds','paint','grinning','best work','limitations','overthinking'],thr:[],sum:'2:30AM creative explosion, best work in years.',tone:'euphoric, wild, manic',emj:emo({Happiness:78,Surprise:12,Neutral:5,Sadness:2,Fear:1,Anger:1,Disgust:1})},
+{day:9,t:daysAgo(9,14,0),tr:"Woke noon. Paint on pillowcase. In daylight some less exciting. But three or four genuinely good. Curate ruthlessly.",dur:18,e:0.40,sr:125,pr:0.22,pv:0.32,ss:0.2,sl:'positive',ent:[],top:['curation','self-critique'],kw:['pillowcase','paint','daylight','curate','ruthlessly'],thr:[],sum:'Post-flow crash, 3-4 keepers.',tone:'groggy, honest, analytical',emj:emo({Neutral:35,Happiness:28,Sadness:15,Surprise:10,Fear:5,Anger:4,Disgust:3})},
+{day:10,t:daysAgo(10,19,30),tr:"Texted Luis photos. He responded with a voice note yelling YES for ten seconds. Then asked about a joint show. His long exposures next to my thirty second paintings. Time as theme. Said yes immediately.",dur:26,e:0.78,sr:152,pr:0.08,pv:0.50,ss:0.8,sl:'positive',ent:['Luis'],top:['collaboration','exhibition','time'],kw:['Luis','joint show','YES','time','long exposure','collaboration'],thr:[],sum:'Luis proposed joint show.',tone:'giddy, fast, incredulous',emj:emo({Happiness:70,Surprise:18,Neutral:8,Sadness:1,Fear:1,Anger:1,Disgust:1})},
+{day:11,t:daysAgo(11,23,0),tr:"Writing artist statement. Hate it. Every word pretentious. The paintings are about urgency and instinct and terror of uncommitted marks. See. Pretentious.",dur:22,e:0.52,sr:138,pr:0.18,pv:0.42,ss:0.0,sl:'neutral',ent:[],top:['artist statement','writing'],kw:['artist statement','pretentious','urgency','instinct','terror'],thr:[],sum:'Struggling with artist statement.',tone:'sardonic, frustrated, witty',emj:emo({Neutral:30,Sadness:20,Happiness:18,Anger:12,Surprise:10,Fear:5,Disgust:5})},
+{day:12,t:daysAgo(12,10,0),tr:"Morning studio. Five more canvases. Constraint becoming second nature. Know what the brush will do. Need to change something. Comfort is the enemy of good constraint art.",dur:23,e:0.65,sr:140,pr:0.14,pv:0.40,ss:0.4,sl:'positive',ent:[],top:['painting','constraints','evolution'],kw:['morning','comfort','enemy','constraint','second nature'],thr:[],sum:'Constraint too easy, needs evolution.',tone:'analytical, restless, productive',emj:emo({Happiness:38,Neutral:28,Surprise:12,Fear:10,Sadness:5,Anger:4,Disgust:3})},
+{day:13,t:daysAgo(13,2,15),tr:"New rule. Left hand only. I'm right handed. Chaotic and unpredictable. One looks like a city on fire from above. My left hand has opinions my right hand doesn't know about.",dur:24,e:0.82,sr:155,pr:0.08,pv:0.52,ss:0.7,sl:'positive',ent:[],top:['left hand','new constraint','chaos'],kw:['left hand','chaotic','city on fire','opinions','unpredictable'],thr:[],sum:'2AM left hand canvases, wild results.',tone:'delighted, surprised, charged',emj:emo({Happiness:58,Surprise:25,Neutral:10,Sadness:2,Fear:2,Anger:2,Disgust:1})},
+{day:14,t:daysAgo(14,17,0),tr:"Met Mira. Small gallery in arts district. Luis introduced us. She said thirty second concept reminds her of Gutai. Pretended I knew. Read about it after. Actually relevant.",dur:27,e:0.62,sr:142,pr:0.14,pv:0.42,ss:0.5,sl:'positive',ent:['Mira','Luis'],top:['gallery','Gutai','networking'],kw:['Mira','gallery','Gutai','arts district','Luis'],thr:[],sum:'Met gallery owner Mira, Gutai connection.',tone:'curious, social, buzzing',emj:emo({Happiness:48,Surprise:20,Neutral:18,Sadness:5,Fear:4,Anger:3,Disgust:2})},
+{day:15,t:daysAgo(15,22,45),tr:"Hit a wall. Eight canvases, threw six away. Left hand becoming a crutch. Manufacturing chaos instead of finding it. Need to just be in the thirty seconds with nothing but attention.",dur:22,e:0.38,sr:128,pr:0.24,pv:0.35,ss:-0.2,sl:'negative',ent:[],top:['creative block','authenticity'],kw:['wall','crutch','chaos','discomfort','attention'],thr:[],sum:'Mini-block, left hand became crutch.',tone:'frustrated, honest, searching',emj:emo({Sadness:28,Anger:20,Neutral:25,Fear:12,Happiness:8,Surprise:5,Disgust:2})},
+{day:16,t:daysAgo(16,3,0),tr:"Three AM. Best piece in the series. No trick. No left hand. Just thirty seconds. Closed eyes first fifteen, opened for last fifteen. Half dream half intention. The line between control and surrender.",dur:28,e:0.90,sr:148,pr:0.08,pv:0.55,ss:0.9,sl:'positive',ent:[],top:['breakthrough','eyes closed','control vs surrender'],kw:['eyes closed','dream','intention','control','surrender','best piece'],thr:[],sum:'3AM best piece, eyes closed then open.',tone:'transcendent, awed, reverent',emj:emo({Happiness:72,Surprise:15,Neutral:8,Sadness:2,Fear:1,Anger:1,Disgust:1})},
+{day:16,t:daysAgo(16,13,0),tr:"Texted Mira photos. Called within ten minutes. Show in six weeks. Luis in. I'm in. She handles promotion. This is happening.",dur:22,e:0.75,sr:150,pr:0.10,pv:0.48,ss:0.8,sl:'positive',ent:['Mira','Luis'],top:['gallery show','planning'],kw:['Mira','six weeks','show','Luis','happening'],thr:[],sum:'Gallery show confirmed.',tone:'disbelief, excited, accelerating',emj:emo({Happiness:65,Surprise:20,Neutral:10,Sadness:2,Fear:1,Anger:1,Disgust:1})},
+{day:18,t:daysAgo(18,21,0),tr:"Selecting pieces. Forty seven total. Need twenty. Each removal hurts. But the show needs arc. Beginning constraint. Middle chaos. End surrender.",dur:23,e:0.60,sr:132,pr:0.18,pv:0.38,ss:0.4,sl:'positive',ent:[],top:['curation','show narrative'],kw:['forty seven','twenty','arc','constraint','chaos','surrender'],thr:[],sum:'Curating 47 → 20, found arc.',tone:'decisive, editorial, steady',emj:emo({Happiness:35,Neutral:30,Sadness:15,Surprise:8,Fear:5,Anger:4,Disgust:3})},
+{day:19,t:daysAgo(19,1,0),tr:"Luis came over. Printing photos at four by six feet. Next to my twelve inch canvases the scale contrast is dramatic. His hours of light versus my seconds of instinct. Time as the medium not the subject.",dur:29,e:0.72,sr:140,pr:0.14,pv:0.45,ss:0.7,sl:'positive',ent:['Luis'],top:['collaboration','scale','time'],kw:['Luis','scale','four by six feet','light','instinct','medium'],thr:[],sum:'Planning with Luis, scale contrast.',tone:'collaborative, philosophical, energized',emj:emo({Happiness:55,Neutral:22,Surprise:12,Sadness:4,Fear:3,Anger:2,Disgust:2})},
+{day:21,t:daysAgo(21,23,0),tr:"Three weeks ago I couldn't start. Now I have a show, forty seven canvases, a collaborator, and a gallery. The block wasn't absence of ideas. It was too many without a container. The thirty second constraint was the container. Everything I needed was already here.",dur:30,e:0.70,sr:128,pr:0.18,pv:0.42,ss:0.7,sl:'positive',ent:['Luis','Mira'],top:['reflection','constraints','gratitude'],kw:['container','constraint','thirty seconds','block','everything','already here'],thr:[],sum:'Three-week reflection, constraint was the key.',tone:'wise, satisfied, grounded',emj:emo({Happiness:52,Neutral:25,Surprise:8,Sadness:8,Fear:3,Anger:2,Disgust:2})},
+{day:23,t:daysAgo(23,2,0),tr:"Late night final pieces. The surrender ones. Eyes closed most of it. Paint goes where it goes. I'm just the vehicle. There's a word in Japanese. Mushin. No mind.",dur:26,e:0.80,sr:135,pr:0.12,pv:0.50,ss:0.7,sl:'positive',ent:[],top:['mushin','surrender','philosophy'],kw:['mushin','no mind','eyes closed','vehicle','surrender'],thr:[],sum:'Late night final pieces, mushin state.',tone:'meditative, flowing, transcendent',emj:emo({Happiness:55,Neutral:25,Surprise:10,Sadness:4,Fear:3,Anger:2,Disgust:1})},
+{day:25,t:daysAgo(25,15,0),tr:"Mira came for final selection. Pulled three pieces I was cutting. Said they're the most honest. She's right. The embarrassing ones are where I lost control completely. Embarrassment is a compass.",dur:25,e:0.62,sr:138,pr:0.16,pv:0.42,ss:0.5,sl:'positive',ent:['Mira'],top:['curation','honesty','vulnerability'],kw:['Mira','honest','embarrassment','compass','lost control'],thr:[],sum:'Mira saved pieces, embarrassment as compass.',tone:'humbled, surprised, grateful',emj:emo({Happiness:40,Surprise:22,Neutral:18,Sadness:10,Fear:5,Anger:3,Disgust:2})},
+{day:27,t:daysAgo(27,20,0),tr:"Installation planned. Luis's four large prints east wall. My twenty canvases west and north. Enter through his hours, exit through my seconds. Spatial narrative works.",dur:28,e:0.65,sr:140,pr:0.14,pv:0.40,ss:0.6,sl:'positive',ent:['Luis'],top:['installation','gallery space'],kw:['installation','gallery','east wall','spatial','narrative'],thr:[],sum:'Gallery layout planned.',tone:'professional, excited, visual',emj:emo({Happiness:50,Neutral:25,Surprise:10,Sadness:5,Fear:5,Anger:3,Disgust:2})},
+{day:29,t:daysAgo(29,22,0),tr:"Artist statement finalized. Three sentences. These paintings were made in thirty seconds each. They are what remains when you remove time for doubt. They are not about speed. They are about trust. Luis said it gave him chills.",dur:22,e:0.60,sr:130,pr:0.18,pv:0.38,ss:0.6,sl:'positive',ent:['Mira','Luis'],top:['artist statement','trust'],kw:['artist statement','thirty seconds','doubt','trust','chills'],thr:[],sum:'Artist statement — three sentences about trust.',tone:'proud, minimal, resonant',emj:emo({Happiness:48,Neutral:28,Surprise:10,Sadness:5,Fear:4,Anger:3,Disgust:2})},
+{day:30,t:daysAgo(30,23,30),tr:"Show opens in ten days. Everything ready. Keep touching the edges of stacked canvases. A month ago these didn't exist. They were turpentine and blank linen and a block. Constraint set them free. Constraint set me free.",dur:28,e:0.68,sr:125,pr:0.20,pv:0.42,ss:0.7,sl:'positive',ent:[],top:['show prep','reflection','constraint','freedom'],kw:['show','turpentine','blank','constraint','free'],thr:[],sum:'Month reflection, constraint as liberation.',tone:'reverent, complete, poetic',emj:emo({Happiness:55,Neutral:22,Surprise:8,Sadness:8,Fear:3,Anger:2,Disgust:2})},
 ];
 
-// ============================================
-// INSIGHTS (pre-generated for demo)
-// ============================================
-function generateInsights(userId, persona) {
-  if (persona === 'founder') {
-    return [
-      {
-        user_id: userId, type: 'emotional_pattern',
-        title: 'Your mood has been declining steadily',
-        body: 'Over the past 3 weeks, your average sentiment dropped from +0.6 to -0.4. The shift accelerated around day 10 when investor pressure and co-founder tension overlapped.',
-        confidence_score: 0.92, entry_count: 21, is_read: false, dismissed: false,
-      },
-      {
-        user_id: userId, type: 'unresolved_thread',
-        title: 'The board meeting — never revisited',
-        body: 'You mentioned "the board meeting" on day 3 with significant stress. You pushed it back on day 10 but never discussed the outcome or how it went. This thread carries unresolved weight.',
-        confidence_score: 0.85, entry_count: 2, is_read: false, dismissed: false,
-      },
-      {
-        user_id: userId, type: 'relationship_map',
-        title: 'Sarah appears in increasingly negative contexts',
-        body: 'Early entries mention Sarah in collaborative, positive contexts. By week 2, mentions shift to conflict, guilt, and distance. In the last 10 entries, Sarah appears in a negative context 3x more than in the first 10.',
-        confidence_score: 0.88, entry_count: 15, is_read: false, dismissed: false,
-      },
-      {
-        user_id: userId, type: 'vocabulary_drift',
-        title: 'Your language shifted from certainty to uncertainty',
-        body: '"Excited" appeared 2x in week 1, then disappeared entirely. "Hoping" appeared 3x in week 2. By week 3, "trying" became your default verb. This hedging pattern often precedes burnout recognition.',
-        confidence_score: 0.90, entry_count: 21, is_read: false, dismissed: false,
-      },
-      {
-        user_id: userId, type: 'energy_correlation',
-        title: 'Your weekends are lower energy than weekdays',
-        body: 'Your Saturday and Sunday entries average 0.27 energy versus 0.42 on weekdays. You\'re working through weekends but your body is running on empty when it should be recovering.',
-        confidence_score: 0.82, entry_count: 6, is_read: false, dismissed: false,
-      },
-    ];
-  }
+// ── entry builder ──
+function build(arr,uid,persona){return arr.map(e=>({user_id:uid,created_at:e.t,transcript:e.tr,duration_seconds:e.dur,energy_level:e.e,speaking_rate:e.sr,pause_ratio:e.pr,pitch_variance:e.pv,sentiment_score:e.ss,sentiment_label:e.sl,entities:e.ent,topics:e.top,keywords:e.kw,unresolved_threads:e.thr,summary:e.sum,speaking_tone:e.tone,emotion_context_notes:e.emj,facial_affect_summary:null,is_demo:true,demo_persona:persona}));}
 
-  if (persona === 'student') {
-    return [
-      {
-        user_id: userId, type: 'emotional_pattern',
-        title: 'Anxiety spike around exam week',
-        body: 'Your sentiment dropped sharply from day 8-11, coinciding with midterm prep. Speaking rate increased from 148 to 165 wpm and pause ratio dropped to 0.08 — signs of rushed, anxious speech. Post-exams, mood recovered to pre-exam levels.',
-        confidence_score: 0.94, entry_count: 8, is_read: false, dismissed: false,
-      },
-      {
-        user_id: userId, type: 'unresolved_thread',
-        title: 'You haven\'t mentioned Jake in 11 days',
-        body: 'Jake appeared in 4 of your first 6 entries — positive at first, then a conflict on day 6 that was never addressed. He disappeared from your entries entirely after that. The last mention had emotional weight.',
-        confidence_score: 0.87, entry_count: 6, is_read: false, dismissed: false,
-      },
-      {
-        user_id: userId, type: 'vocabulary_drift',
-        title: 'Your entries got shorter during exam week',
-        body: 'Average entry duration dropped from 25 seconds (week 1) to 20 seconds (week 2) during peak exam stress. Week 3 partially recovered to 22 seconds. Entry length tracks closely with your energy levels.',
-        confidence_score: 0.80, entry_count: 21, is_read: false, dismissed: false,
-      },
-      {
-        user_id: userId, type: 'relationship_map',
-        title: 'Anika replaced Jake as your primary social connection',
-        body: 'Jake appears in entries 1-3 and 6-7, then only twice more. Anika appears in 12 of 21 entries and is mentioned in exclusively positive contexts. Your social world narrowed significantly this quarter.',
-        confidence_score: 0.91, entry_count: 16, is_read: false, dismissed: false,
-      },
-      {
-        user_id: userId, type: 'energy_correlation',
-        title: 'Study sessions with Anika boost your mood',
-        body: 'Entries that mention studying with Anika average +0.45 sentiment versus +0.05 for solo study entries. Collaborative learning consistently lifts your emotional state.',
-        confidence_score: 0.78, entry_count: 8, is_read: false, dismissed: false,
-      },
-    ];
-  }
+// ── insights ──
+function ins(uid,p){const r=[];if(p==='founder'){r.push({user_id:uid,type:'emotional_pattern',title:'Steady mood decline over 3 weeks',body:'Average sentiment dropped from +0.7 in week 1 to -0.5 at the low point around days 12-14. The decline accelerated when investor pressure and co-founder tension overlapped. Small recovery in the final week after therapy and honest conversations.',confidence_score:0.93,entry_count:35,is_read:false,dismissed:false});r.push({user_id:uid,type:'unresolved_thread',title:'The board meeting — never revisited',body:'Mentioned on day 5 with high stress, pushed back on day 10. Never discussed outcome. This thread carries unresolved weight.',confidence_score:0.86,entry_count:2,is_read:false,dismissed:false});r.push({user_id:uid,type:'relationship_map',title:'Sarah appears in increasingly negative contexts',body:'Early mentions are collaborative (+0.6 avg). By week 2, shift to conflict and guilt (-0.3 avg). In last 10 entries, negative context 3x more than first 10. Week 4 partial recovery.',confidence_score:0.89,entry_count:18,is_read:false,dismissed:false});r.push({user_id:uid,type:'vocabulary_drift',title:'Language shifted: excited → hoping → trying → maybe',body:'"Excited" in weeks 1-2, disappeared. "Hoping" 3x in week 2. "Trying" and "maybe" default verbs by week 3. Hedging pattern precedes burnout recognition.',confidence_score:0.91,entry_count:35,is_read:false,dismissed:false});r.push({user_id:uid,type:'energy_correlation',title:'Weekend energy lower than weekdays',body:'Sat/Sun entries average 0.25 energy vs 0.42 weekdays. Working through weekends on empty. One morning run (day 20) was highest weekend reading.',confidence_score:0.84,entry_count:10,is_read:false,dismissed:false});r.push({user_id:uid,type:'recurring_trend',title:'Recurring theme: "burn rate"',body:'Appeared in 4 entries, always in anxious/fear-dominated contexts. Worth noticing whether this is actionable or rumination.',confidence_score:0.78,entry_count:4,is_read:false,dismissed:false});}if(p==='student'){r.push({user_id:uid,type:'emotional_pattern',title:'Sharp anxiety spike around exam week',body:'Sentiment dropped to -0.5. Speaking rate spiked to 168 wpm. Pause ratio dropped to 0.06. Physical symptoms appeared. Post-exams, mood recovered above pre-exam levels.',confidence_score:0.94,entry_count:10,is_read:false,dismissed:false});r.push({user_id:uid,type:'unresolved_thread',title:"Jake disappeared for 22 days",body:'Positive in entries 1-3, conflict day 6, then vanished until day 28. Single syllable interactions. Apology on day 30 suggests this weighed on you throughout.',confidence_score:0.88,entry_count:8,is_read:false,dismissed:false});r.push({user_id:uid,type:'relationship_map',title:'Anika replaced Jake as primary connection',body:'Jake appears days 1-3 and 6 then nearly vanishes. Anika in 14 of 34 entries, every mention positive (+0.48 avg). Social world narrowed to one person.',confidence_score:0.92,entry_count:18,is_read:false,dismissed:false});r.push({user_id:uid,type:'vocabulary_drift',title:'Entry duration shrank during peak stress',body:'Average dropped from 24s (week 1) to 17s during exams. Week 3 partially recovered to 21s. Duration tracks energy closely.',confidence_score:0.80,entry_count:34,is_read:false,dismissed:false});r.push({user_id:uid,type:'energy_correlation',title:'Studying with Anika boosts mood',body:'Entries mentioning Anika study sessions average +0.42 sentiment vs +0.02 solo. Collaborative learning lifts emotional state.',confidence_score:0.79,entry_count:10,is_read:false,dismissed:false});r.push({user_id:uid,type:'recurring_trend',title:'Recurring theme: "graph"',body:'Graph algorithms in 6 entries from confusion to exam success. Clear growth narrative.',confidence_score:0.82,entry_count:6,is_read:false,dismissed:false});}if(p==='creative'){r.push({user_id:uid,type:'energy_correlation',title:'Best work happens after midnight',body:'Midnight-3AM entries average 0.80 energy and +0.68 sentiment. Daytime 0.55 energy. Every breakthrough (days 9, 13, 16, 23) after midnight.',confidence_score:0.94,entry_count:8,is_read:false,dismissed:false});r.push({user_id:uid,type:'unresolved_thread',title:'"The project" unnamed for 8 days',body:'Mentioned in 4 entries over first 7 days without specifying what it was. Resolved day 8 when 30-second constraint gave shape.',confidence_score:0.86,entry_count:5,is_read:false,dismissed:false});r.push({user_id:uid,type:'emotional_pattern',title:'Block → constraint → explosion',body:'Days 1-7 averaged +0.14 with self-doubt. Days 8-13 averaged +0.62 as constraint unlocked flow. Day 15 mini-block (-0.2) then strongest entry day 16 (+0.9). Pattern: accumulation → constraint → release.',confidence_score:0.90,entry_count:20,is_read:false,dismissed:false});r.push({user_id:uid,type:'relationship_map',title:'Luis was the catalyst',body:'8 entries, every one positive. Day 5 conversation led to 30-second concept day 6. His YES triggered the show. Converted creative energy into momentum.',confidence_score:0.92,entry_count:8,is_read:false,dismissed:false});r.push({user_id:uid,type:'vocabulary_drift',title:'Richest vocabulary of any user',body:'45% more unique words per entry. Metaphors in 18 of 33 entries. Most vivid after midnight, most restrained daytime.',confidence_score:0.78,entry_count:33,is_read:false,dismissed:false});r.push({user_id:uid,type:'recurring_trend',title:'Recurring theme: "constraint"',body:'In 12 entries. Evolved from concept (day 5) to practice (day 8) to philosophy (day 21). The word itself is the throughline.',confidence_score:0.88,entry_count:12,is_read:false,dismissed:false});}return r;}
 
-  if (persona === 'creative') {
-    return [
-      {
-        user_id: userId, type: 'energy_correlation',
-        title: 'Your most energetic entries happen late at night',
-        body: 'Entries recorded between midnight and 3AM average 0.78 energy and +0.62 sentiment. Your daytime entries average 0.52 energy. Your creative peak is nocturnal — your best breakthroughs (day 9, day 14, day 17) all happened after midnight.',
-        confidence_score: 0.93, entry_count: 7, is_read: false, dismissed: false,
-      },
-      {
-        user_id: userId, type: 'unresolved_thread',
-        title: '"The project" was unnamed for 8 days',
-        body: 'You mentioned "the project" in 5 entries over the first 8 days without ever specifying what it was. The vagueness resolved on day 8 when the 30-second constraint gave it shape. Naming things often follows finding constraints.',
-        confidence_score: 0.85, entry_count: 8, is_read: false, dismissed: false,
-      },
-      {
-        user_id: userId, type: 'emotional_pattern',
-        title: 'Creative block followed by explosive output',
-        body: 'Days 1-7 averaged +0.14 sentiment with frequent self-doubt. Days 8-11 averaged +0.67 as the constraint unlocked creative flow. The pattern: accumulation → constraint → release. Your block wasn\'t a problem, it was a loading phase.',
-        confidence_score: 0.89, entry_count: 14, is_read: false, dismissed: false,
-      },
-      {
-        user_id: userId, type: 'relationship_map',
-        title: 'Luis was the catalyst',
-        body: 'Luis appears in 6 entries. Every mention is in a positive context and directly precedes a creative breakthrough. The day 5 conversation about constraints directly led to the 30-second concept on day 6.',
-        confidence_score: 0.91, entry_count: 6, is_read: false, dismissed: false,
-      },
-      {
-        user_id: userId, type: 'vocabulary_drift',
-        title: 'Your vocabulary is the richest of any persona',
-        body: 'You use 40% more unique words per entry than average. Metaphors appear in 15 of 21 entries. Your language is most vivid after midnight and most restrained during daytime entries.',
-        confidence_score: 0.76, entry_count: 21, is_read: false, dismissed: false,
-      },
-    ];
-  }
+// ── weekly summaries ──
+function sums(uid,p){const now=new Date();const ws=[{s:new Date(now.getTime()-28*864e5),e:new Date(now.getTime()-22*864e5)},{s:new Date(now.getTime()-21*864e5),e:new Date(now.getTime()-15*864e5)},{s:new Date(now.getTime()-14*864e5),e:new Date(now.getTime()-8*864e5)},{s:new Date(now.getTime()-7*864e5),e:now}];const f=d=>d.toISOString().split('T')[0];const r=[];if(p==='founder'){r.push({user_id:uid,week_start:f(ws[0].s),week_end:f(ws[0].e),summary:'Post-funding energy carried first days before operational pressures set in. Pricing fight with Sarah introduced tension. Board meeting consumed weekend.',avg_sentiment:0.25,entry_count:8,top_topics:['board meeting','hiring','Sarah','pricing'],emotional_arc:'Optimistic → tension → isolation'});r.push({user_id:uid,week_start:f(ws[1].s),week_end:f(ws[1].e),summary:'Burnout visible. Team noticed. Sarah confronted distance. Mentor planted seed. Lost customer. Both weekends working. "Hoping" replaced "excited."',avg_sentiment:-0.22,entry_count:9,top_topics:['burnout','Sarah','mentor','churn'],emotional_arc:'Flat → confrontation → midnight anxiety'});r.push({user_id:uid,week_start:f(ws[2].s),week_end:f(ws[2].e),summary:'Bottom around day 12-14. Car paralysis. Skipped events. Sarah\'s call cracked something open. "Trying" dominant word.',avg_sentiment:-0.38,entry_count:10,top_topics:['paralysis','avoidance','honesty'],emotional_arc:'Descent → bottom → first honesty'});r.push({user_id:uid,week_start:f(ws[3].s),week_end:f(ws[3].e),summary:'Recovery began. Morning run. Therapy started. VP Ops interviews. Sarah planning rest days. Sleep 4→6 hours. "Maybe" with hope attached.',avg_sentiment:0.15,entry_count:8,top_topics:['therapy','VP Ops','recovery'],emotional_arc:'First steps → reframing help'});}if(p==='student'){r.push({user_id:uid,week_start:f(ws[0].s),week_end:f(ws[0].e),summary:'Strong start. New apartment, exciting classes, Anika. Jake conflict day 6 introduced crack.',avg_sentiment:0.35,entry_count:7,top_topics:['new quarter','Jake','Anika','NLP'],emotional_arc:'Excited → settled → first tension'});r.push({user_id:uid,week_start:f(ws[1].s),week_end:f(ws[1].e),summary:'Midterm week. Insomnia, tremors, caffeine. Speaking rate 168 wpm. Relief after was palpable. Anika lifeline. Jake disappeared.',avg_sentiment:-0.08,entry_count:10,top_topics:['midterms','anxiety','algorithms'],emotional_arc:'Dread → crisis → relief'});r.push({user_id:uid,week_start:f(ws[2].s),week_end:f(ws[2].e),summary:'Recovery. Good grades. RA submitted and accepted. Jake unresolved. Social world narrowed to Anika.',avg_sentiment:0.35,entry_count:9,top_topics:['grades','RA position','Anika'],emotional_arc:'Recovery → momentum → guilt'});r.push({user_id:uid,week_start:f(ws[3].s),week_end:f(ws[3].e),summary:'RA confirmed. Told mom. Finally sent Jake apology — he opened up. Dinner planned. Threads resolving.',avg_sentiment:0.45,entry_count:8,top_topics:['RA','Jake resolution','growth'],emotional_arc:'Achievement → vulnerability → resolution'});}if(p==='creative'){r.push({user_id:uid,week_start:f(ws[0].s),week_end:f(ws[0].e),summary:'Circling. "The project" unnamed. Avoidance as productivity. Luis conversation planted constraint seed.',avg_sentiment:0.12,entry_count:7,top_topics:['block','avoidance','Luis','constraints'],emotional_arc:'Frustration → catalyst'});r.push({user_id:uid,week_start:f(ws[1].s),week_end:f(ws[1].e),summary:'30-second constraint unlocked everything. 25+ canvases. Best work after midnight. Joint show materialized.',avg_sentiment:0.55,entry_count:9,top_topics:['breakthrough','thirty seconds','Luis'],emotional_arc:'Spark → explosion → crash'});r.push({user_id:uid,week_start:f(ws[2].s),week_end:f(ws[2].e),summary:'Making to curating. Met Mira. Left hand crutch then eyes-closed breakthrough. Show confirmed.',avg_sentiment:0.48,entry_count:9,top_topics:['curation','Mira','eyes closed'],emotional_arc:'Refinement → block → transcendence'});r.push({user_id:uid,week_start:f(ws[3].s),week_end:f(ws[3].e),summary:'Final production. Mushin concept. Mira\'s honest eye. Installation planned. Constraint became philosophy.',avg_sentiment:0.60,entry_count:8,top_topics:['mushin','installation','trust'],emotional_arc:'Completion → readiness'});}return r;}
 
-  return [];
-}
+// ══════════════════════════════════════════════════════
+// RUNNER
+// ══════════════════════════════════════════════════════
+const PS = [
+  { email: 'alex@echojournal.demo', pw: 'echo-demo-2026', name: 'Alex', p: 'founder', d: alex },
+  { email: 'maya@echojournal.demo', pw: 'echo-demo-2026', name: 'Maya', p: 'student', d: maya },
+  { email: 'jordan@echojournal.demo', pw: 'echo-demo-2026', name: 'Jordan', p: 'creative', d: jordan },
+];
 
-// ============================================
-// WEEKLY SUMMARIES (pre-generated)
-// ============================================
-function generateWeeklySummaries(userId, persona) {
-  const now = new Date();
-  const weekStarts = [
-    { start: new Date(now.getTime() - 21 * 86400000), end: new Date(now.getTime() - 15 * 86400000) },
-    { start: new Date(now.getTime() - 14 * 86400000), end: new Date(now.getTime() - 8 * 86400000) },
-    { start: new Date(now.getTime() - 7 * 86400000), end: now },
-  ];
-
-  if (persona === 'founder') {
-    return [
-      {
-        user_id: userId,
-        week_start: weekStarts[0].start.toISOString().split('T')[0],
-        week_end: weekStarts[0].end.toISOString().split('T')[0],
-        summary: 'Started the week with post-funding energy but quickly hit operational walls. A pricing disagreement with Sarah set a tense undertone. Board meeting prep consumed the weekend. Energy is high but fragile.',
-        avg_sentiment: 0.2, entry_count: 7,
-        top_topics: ['board meeting', 'hiring', 'Sarah', 'pricing'],
-        emotional_arc: 'Optimistic start → tension building → weekend isolation',
-      },
-      {
-        user_id: userId,
-        week_start: weekStarts[1].start.toISOString().split('T')[0],
-        week_end: weekStarts[1].end.toISOString().split('T')[0],
-        summary: 'The burnout became visible this week. Team noticed low energy. Sarah confronted the growing distance. A mentor conversation planted an important seed about paying attention to warning signs. Lost a customer. Working through both weekend days.',
-        avg_sentiment: -0.25, entry_count: 7,
-        top_topics: ['burnout', 'Sarah conflict', 'customer churn', 'mentorship'],
-        emotional_arc: 'Flat → confrontation → paralysis → first rest',
-      },
-      {
-        user_id: userId,
-        week_start: weekStarts[2].start.toISOString().split('T')[0],
-        week_end: weekStarts[2].end.toISOString().split('T')[0],
-        summary: 'Bottomed out mid-week then began climbing back. Sent an honest investor update. Sarah drafted a VP Ops JD unprompted. Vocabulary shifted from "excited" to "trying." Therapy appointment booked. The awareness is there even if the recovery isn\'t.',
-        avg_sentiment: -0.1, entry_count: 7,
-        top_topics: ['recovery', 'therapy', 'VP Ops', 'self-awareness'],
-        emotional_arc: 'Low point → honesty → first steps toward help',
-      },
-    ];
-  }
-
-  if (persona === 'student') {
-    return [
-      {
-        user_id: userId,
-        week_start: weekStarts[0].start.toISOString().split('T')[0],
-        week_end: weekStarts[0].end.toISOString().split('T')[0],
-        summary: 'Strong start to the quarter. New apartment with Jake, exciting classes, and a promising study partnership with Anika. Social life is active. A small conflict with Jake on day 6 introduced a crack that would widen.',
-        avg_sentiment: 0.35, entry_count: 7,
-        top_topics: ['new quarter', 'Jake', 'Anika', 'NLP seminar'],
-        emotional_arc: 'Excited → settled → first tension with Jake',
-      },
-      {
-        user_id: userId,
-        week_start: weekStarts[1].start.toISOString().split('T')[0],
-        week_end: weekStarts[1].end.toISOString().split('T')[0],
-        summary: 'Midterm week hit hard. Physical anxiety symptoms appeared — caffeine dependence, insomnia, hand tremors. Speaking rate spiked to 165 wpm. The relief after finishing was palpable. Anika was a lifeline throughout.',
-        avg_sentiment: -0.05, entry_count: 7,
-        top_topics: ['midterms', 'anxiety', 'statistics', 'algorithms'],
-        emotional_arc: 'Dread → crisis → grind → massive relief',
-      },
-      {
-        user_id: userId,
-        week_start: weekStarts[2].start.toISOString().split('T')[0],
-        week_end: weekStarts[2].end.toISOString().split('T')[0],
-        summary: 'Post-exam recovery and future planning. Good grades came in. RA application submitted. But Jake remains unaddressed — acknowledged as an unresolved relationship but deferred to "next quarter." Social world has narrowed to primarily Anika.',
-        avg_sentiment: 0.35, entry_count: 7,
-        top_topics: ['grades', 'RA application', 'Jake unresolved', 'career'],
-        emotional_arc: 'Recovery → momentum → lingering guilt about Jake',
-      },
-    ];
-  }
-
-  if (persona === 'creative') {
-    return [
-      {
-        user_id: userId,
-        week_start: weekStarts[0].start.toISOString().split('T')[0],
-        week_end: weekStarts[0].end.toISOString().split('T')[0],
-        summary: 'A week of circling. "The project" remained unnamed and unstarted. Avoidance behaviors — studio reorganization, coffee shop sketching — masked as productivity. The Luis conversation on day 5 planted the constraint seed that would bloom next week.',
-        avg_sentiment: 0.15, entry_count: 7,
-        top_topics: ['creative block', 'avoidance', 'Luis', 'constraints'],
-        emotional_arc: 'Frustration → small joys → catalytic conversation',
-      },
-      {
-        user_id: userId,
-        week_start: weekStarts[1].start.toISOString().split('T')[0],
-        week_end: weekStarts[1].end.toISOString().split('T')[0],
-        summary: 'The 30-second constraint unlocked everything. Output exploded — 30+ canvases in a week. The best work happened after midnight. A joint show with Luis materialized from a text exchange. Energy levels highest of all three weeks.',
-        avg_sentiment: 0.55, entry_count: 7,
-        top_topics: ['30-second constraint', 'breakthrough', 'Luis collaboration', 'gallery'],
-        emotional_arc: 'Spark → explosion → creative high → productive crash',
-      },
-      {
-        user_id: userId,
-        week_start: weekStarts[2].start.toISOString().split('T')[0],
-        week_end: weekStarts[2].end.toISOString().split('T')[0],
-        summary: 'From making to curating. Met gallery owner Mira. Hit a mini-block when the left hand gimmick became a crutch, then broke through again with the eyes-closed technique. Show confirmed in 6 weeks. The constraint that started as limitation became liberation.',
-        avg_sentiment: 0.5, entry_count: 7,
-        top_topics: ['curation', 'Mira gallery', 'show planning', 'constraint evolution'],
-        emotional_arc: 'Refinement → mini-block → breakthrough → momentum',
-      },
-    ];
-  }
-
-  return [];
-}
-
-// ============================================
-// SEED RUNNER
-// ============================================
-async function getOrCreateUser({ email, password, displayName }) {
+async function findUserByEmail(email) {
+  const target = email.toLowerCase();
   let page = 1;
   const perPage = 200;
   for (;;) {
     const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
     if (error) throw error;
-    const found = data.users.find(
-      (u) => u.email?.toLowerCase() === email.toLowerCase()
-    );
-    if (found) {
-      await supabase.auth.admin.updateUserById(found.id, {
-        password,
-        email_confirm: true,
-        user_metadata: { display_name: displayName },
-      });
-      return { id: found.id, existed: true };
-    }
-    if (data.users.length < perPage) break;
+    const u = data.users.find((x) => x.email?.toLowerCase() === target);
+    if (u) return u;
+    if (data.users.length < perPage) return null;
     page += 1;
   }
+}
 
+async function getOrCreateUser({ email, password, displayName }) {
+  const found = await findUserByEmail(email);
+  if (found) {
+    await supabase.auth.admin.updateUserById(found.id, {
+      password,
+      email_confirm: true,
+      user_metadata: { display_name: displayName },
+    });
+    return { id: found.id, existed: true };
+  }
   const { data: created, error: cErr } = await supabase.auth.admin.createUser({
     email,
     password,
@@ -836,117 +191,50 @@ async function getOrCreateUser({ email, password, displayName }) {
   return { id: created.user.id, existed: false };
 }
 
-const PERSONAS = [
-  {
-    email: 'alex@echojournal.demo',
-    password: 'echo-demo-2026',
-    displayName: 'Alex',
-    persona: 'founder',
-    entries: alexEntries,
-  },
-  {
-    email: 'maya@echojournal.demo',
-    password: 'echo-demo-2026',
-    displayName: 'Maya',
-    persona: 'student',
-    entries: mayaEntries,
-  },
-  {
-    email: 'jordan@echojournal.demo',
-    password: 'echo-demo-2026',
-    displayName: 'Jordan',
-    persona: 'creative',
-    entries: jordanEntries,
-  },
-];
-
 async function seed() {
-  console.log('🌱 Seeding Echo Journal demo data...\n');
-
-  for (const persona of PERSONAS) {
-    console.log(`━━━ Creating: ${persona.displayName} (${persona.persona}) ━━━`);
-
-    let userId;
+  console.log('🌱 Seeding Lumos demo data (v2)…\n');
+  for (const x of PS) {
+    console.log(`━━━ ${x.name} (${x.p}) ━━━`);
+    let uid;
     try {
       const { id, existed } = await getOrCreateUser({
-        email: persona.email,
-        password: persona.password,
-        displayName: persona.displayName,
+        email: x.email,
+        password: x.pw,
+        displayName: x.name,
       });
-      userId = id;
-      await supabase
-        .from('profiles')
-        .update({ display_name: persona.displayName })
-        .eq('id', userId);
+      uid = id;
+      await supabase.from('profiles').update({ display_name: x.name }).eq('id', uid);
 
       if (existed) {
-        console.log(`  ⚠️  User already exists — refreshing demo data…`);
-        await supabase.from('weekly_summaries').delete().eq('user_id', userId);
-        await supabase.from('insights').delete().eq('user_id', userId);
-        await supabase.from('entries').delete().eq('user_id', userId).eq('is_demo', true);
-        console.log(`  🧹 Cleaned existing demo rows`);
+        console.log(`  ⚠️  User exists (${uid}) — clearing prior demo data`);
+        await supabase.from('weekly_summaries').delete().eq('user_id', uid);
+        await supabase.from('insights').delete().eq('user_id', uid);
+        await supabase.from('entries').delete().eq('user_id', uid).eq('is_demo', true);
       } else {
-        console.log(`  ✅ User created: ${userId}`);
+        console.log(`  ✅ Created ${uid}`);
       }
     } catch (e) {
-      console.error(`  ❌ Auth error: ${e.message || e}`);
+      console.error(`  ❌ ${e.message || e}`);
       continue;
     }
 
-    // 2. Insert entries
-    const entries = persona.entries.map((e) => ({
-      user_id: userId,
-      created_at: e.created_at,
-      transcript: e.transcript,
-      duration_seconds: e.duration_seconds,
-      energy_level: e.energy_level,
-      speaking_rate: e.speaking_rate,
-      pause_ratio: e.pause_ratio,
-      pitch_variance: e.pitch_variance,
-      sentiment_score: e.sentiment_score,
-      sentiment_label: e.sentiment_label,
-      entities: e.entities,
-      topics: e.topics,
-      unresolved_threads: e.unresolved_threads,
-      summary: e.summary,
-      is_demo: true,
-      demo_persona: persona.persona,
-    }));
+    const ents = build(x.d, uid, x.p);
+    const { error: ee } = await supabase.from('entries').insert(ents);
+    if (ee) console.error(`  ❌ Entries: ${ee.message}`);
+    else console.log(`  ✅ ${ents.length} entries`);
 
-    const { error: entryError } = await supabase.from('entries').insert(entries);
-    if (entryError) {
-      console.error(`  ❌ Entry error: ${entryError.message}`);
-    } else {
-      console.log(`  ✅ ${entries.length} entries inserted`);
-    }
+    const ii = ins(uid, x.p);
+    const { error: ie } = await supabase.from('insights').insert(ii);
+    if (ie) console.error(`  ❌ Insights: ${ie.message}`);
+    else console.log(`  ✅ ${ii.length} insights`);
 
-    // 3. Insert insights
-    const insights = generateInsights(userId, persona.persona);
-    if (insights.length > 0) {
-      const { error: insightError } = await supabase.from('insights').insert(insights);
-      if (insightError) {
-        console.error(`  ❌ Insight error: ${insightError.message}`);
-      } else {
-        console.log(`  ✅ ${insights.length} insights inserted`);
-      }
-    }
-
-    // 4. Insert weekly summaries
-    const summaries = generateWeeklySummaries(userId, persona.persona);
-    if (summaries.length > 0) {
-      const { error: summaryError } = await supabase.from('weekly_summaries').insert(summaries);
-      if (summaryError) {
-        console.error(`  ❌ Summary error: ${summaryError.message}`);
-      } else {
-        console.log(`  ✅ ${summaries.length} weekly summaries inserted`);
-      }
-    }
-
+    const ss = sums(uid, x.p);
+    const { error: se } = await supabase.from('weekly_summaries').insert(ss);
+    if (se) console.error(`  ❌ Summaries: ${se.message}`);
+    else console.log(`  ✅ ${ss.length} summaries`);
     console.log('');
   }
-
-  console.log('🎉 Seeding complete!\n');
-  console.log('Demo logins:');
+  console.log('🎉 Done!\n');
   console.log('┌────────────┬──────────────────────────┬──────────────────┐');
   console.log('│ Persona    │ Email                    │ Password         │');
   console.log('├────────────┼──────────────────────────┼──────────────────┤');

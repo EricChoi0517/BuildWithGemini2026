@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { initAudioRecorder } from '@/lib/audio';
 import { connectLiveAPI, extractInsights } from '@/lib/gemini';
 import { saveEntry, getEntries } from '@/lib/supabase';
+import { readGuestEntries, appendGuestEntry } from '@/lib/guestCookies';
 import { runPostEntryHeuristics } from '@/lib/insights';
 import { useAuth } from '@/context/AuthContext';
 import { createFaceSampler } from '@/lib/webcam';
@@ -13,7 +14,7 @@ const MAX_DURATION = 30; // seconds
  * @param {boolean} [options.useWebcam] - Sample webcam stills for multimodal mood analysis (optional)
  */
 export function useRecorder({ useWebcam = false } = {}) {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [state, setState] = useState('idle'); // idle | recording | processing | done | error
   const [elapsed, setElapsed] = useState(0);
   const [waveformData, setWaveformData] = useState([]);
@@ -38,8 +39,8 @@ export function useRecorder({ useWebcam = false } = {}) {
   }, [useWebcam]);
 
   const startRecording = useCallback(async (opts = {}) => {
-    if (!user?.id) {
-      setError('Sign in to save entries.');
+    if (!user?.id && !isGuest) {
+      setError('Sign in or continue as guest to save entries.');
       setState('error');
       return;
     }
@@ -149,7 +150,7 @@ export function useRecorder({ useWebcam = false } = {}) {
       setState('error');
       setError(err.message || 'Microphone access denied');
     }
-  }, [user?.id]);
+  }, [user?.id, isGuest]);
 
   const stopRecording = useCallback(async () => {
     if (state !== 'recording') return;
@@ -186,9 +187,9 @@ export function useRecorder({ useWebcam = false } = {}) {
       return;
     }
 
-    if (!user?.id) {
+    if (!user?.id && !isGuest) {
       setState('error');
-      setError('Sign in to save entries.');
+      setError('Sign in or continue as guest to save entries.');
       return;
     }
 
@@ -199,7 +200,11 @@ export function useRecorder({ useWebcam = false } = {}) {
     try {
       let recentEntries = [];
       try {
-        recentEntries = (await getEntries(user.id, { limit: 10 })) || [];
+        if (isGuest) {
+          recentEntries = readGuestEntries().slice(0, 10);
+        } else {
+          recentEntries = (await getEntries(user.id, { limit: 10 })) || [];
+        }
       } catch (e) {
         console.warn('Could not load recent entries for mood context:', e);
       }
@@ -211,28 +216,46 @@ export function useRecorder({ useWebcam = false } = {}) {
         transcriptVeryShort,
       });
 
-      const entry = await saveEntry({
-        user_id: user.id,
-        transcript: finalTranscript,
-        duration_seconds: elapsed,
-        energy_level: acousticFeatures?.energy,
-        speaking_rate: acousticFeatures?.speakingRate,
-        pause_ratio: acousticFeatures?.pauseRatio,
-        pitch_variance: acousticFeatures?.pitchVariance,
-        ...insights,
-      });
+      if (isGuest) {
+        const guestEntry = {
+          id: `guest-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+          user_id: null,
+          created_at: new Date().toISOString(),
+          transcript: finalTranscript,
+          duration_seconds: elapsed,
+          energy_level: acousticFeatures?.energy,
+          speaking_rate: acousticFeatures?.speakingRate,
+          pause_ratio: acousticFeatures?.pauseRatio,
+          pitch_variance: acousticFeatures?.pitchVariance,
+          ...insights,
+        };
+        appendGuestEntry(guestEntry);
+        setResult(guestEntry);
+        setState('done');
+      } else {
+        const entry = await saveEntry({
+          user_id: user.id,
+          transcript: finalTranscript,
+          duration_seconds: elapsed,
+          energy_level: acousticFeatures?.energy,
+          speaking_rate: acousticFeatures?.speakingRate,
+          pause_ratio: acousticFeatures?.pauseRatio,
+          pitch_variance: acousticFeatures?.pitchVariance,
+          ...insights,
+        });
 
-      setResult(entry);
-      setState('done');
-      runPostEntryHeuristics(user.id).catch((e) =>
-        console.warn('Post-entry heuristics skipped:', e)
-      );
+        setResult(entry);
+        setState('done');
+        runPostEntryHeuristics(user.id).catch((e) =>
+          console.warn('Post-entry heuristics skipped:', e)
+        );
+      }
     } catch (err) {
       console.error('Save failed:', err);
       setState('error');
       setError('Failed to save entry. Please try again.');
     }
-  }, [state, elapsed, user]);
+  }, [state, elapsed, user, isGuest]);
 
   stopRecordingRef.current = stopRecording;
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import LumosMark from '@/components/LumosMark';
 
 export default function LoginPage() {
   const [mode, setMode] = useState('login'); // login | signup | reset
@@ -12,7 +13,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
-  const { signIn, signUp, resetPassword } = useAuth();
+  const { signIn, signUp, resetPassword, enterGuestMode } = useAuth();
   const navigate = useNavigate();
 
   async function handleSubmit(e) {
@@ -54,15 +55,11 @@ export default function LoginPage() {
       >
         {/* Logo / Brand */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-echo-accent/10 border border-echo-accent/20 mb-4 text-echo-accent">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-              <line x1="12" x2="12" y1="19" y2="22" />
-            </svg>
+          <div className="inline-flex items-center justify-center w-[4.5rem] h-[4.5rem] rounded-[1.35rem] bg-white border border-echo-border mb-4 shadow-sm">
+            <LumosMark size={40} iconTexture />
           </div>
           <h1 className="font-pageTitle font-bold text-4xl md:text-5xl text-echo-text text-center tracking-tight">
-            Echo Journal
+            Lumos
           </h1>
           <p className="text-echo-text-muted text-sm mt-2">
             30 seconds. Your voice. Your story.
@@ -192,7 +189,7 @@ export default function LoginPage() {
             </motion.p>
           )}
 
-          <div className="pt-2">
+          <div className="pt-2 space-y-3">
             <button
               type="submit"
               disabled={loading || (mode === 'reset' && resetSent)}
@@ -207,6 +204,18 @@ export default function LoginPage() {
                 mode === 'login' ? 'Log In' : mode === 'signup' ? 'Create Account' : 'Send Reset Link'
               )}
             </button>
+            {mode !== 'reset' && (
+              <button
+                type="button"
+                onClick={() => {
+                  enterGuestMode();
+                  navigate('/');
+                }}
+                className="w-full py-3 rounded-xl text-sm font-medium text-echo-text border border-echo-border bg-echo-surface hover:bg-echo-card transition-colors"
+              >
+                Continue as guest
+              </button>
+            )}
           </div>
 
           {mode === 'reset' && (

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, X, ListMusic } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getEntriesByDateRange } from '@/lib/supabase';
+import { readGuestEntries } from '@/lib/guestCookies';
 import { getDayMoodSummary } from '@/lib/entriesHelpers';
 import { getMoodColor } from '@/components/MoodDot';
 import {
@@ -21,25 +22,31 @@ import {
 
 /** Month calendar with per-day average mood; used inside Analytics (and legacy redirect). */
 export default function CalendarPanel() {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [entries, setEntries] = useState([]);
   const [selectedDay, setSelectedDay] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user && !isGuest) return;
     async function load() {
       setLoading(true);
       try {
         const start = startOfMonth(currentMonth);
         const end = endOfMonth(currentMonth);
-        const data = await getEntriesByDateRange(
-          user.id,
-          start.toISOString(),
-          end.toISOString()
-        );
-        setEntries(data || []);
+        if (isGuest && !user) {
+          const all = readGuestEntries();
+          const data = all.filter((e) => isSameMonth(new Date(e.created_at), currentMonth));
+          setEntries(data);
+        } else if (user) {
+          const data = await getEntriesByDateRange(
+            user.id,
+            start.toISOString(),
+            end.toISOString()
+          );
+          setEntries(data || []);
+        }
       } catch (err) {
         console.error('Failed to load calendar entries:', err);
       } finally {
@@ -47,7 +54,7 @@ export default function CalendarPanel() {
       }
     }
     load();
-  }, [user, currentMonth]);
+  }, [user, isGuest, currentMonth]);
 
   const monthStart = startOfMonth(currentMonth);
   const calStart = startOfWeek(monthStart);

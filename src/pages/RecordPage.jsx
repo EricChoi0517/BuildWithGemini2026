@@ -5,6 +5,8 @@ import { Mic, Square, Check, RotateCcw, Video } from 'lucide-react';
 import { useRecorder } from '@/hooks/useRecorder';
 import { useAuth } from '@/context/AuthContext';
 import { saveJournalFromText } from '@/lib/saveJournalFromText';
+import { extractInsights } from '@/lib/gemini';
+import { readGuestEntries, appendGuestEntry } from '@/lib/guestCookies';
 import Waveform from '@/components/Waveform';
 import MoodDot, { formatMoodLabel } from '@/components/MoodDot';
 import EmotionBars from '@/components/EmotionBars';
@@ -90,7 +92,7 @@ export default function RecordPage() {
             <p className="text-echo-text-muted text-sm">
               Tap the mic to start. 30 seconds max.
             </p>
-            <p className="text-echo-text-dim text-xs max-w-sm mx-auto">
+            <p className="text-echo-text-muted text-sm max-w-sm mx-auto leading-relaxed">
               The prompt is optional—go off-topic if you want. We note when speech doesn&apos;t match the prompt so insights stay honest.
             </p>
             <label className="flex items-start gap-3 cursor-pointer text-left px-1">
@@ -105,7 +107,7 @@ export default function RecordPage() {
                   <Video size={16} className="text-echo-accent shrink-0" />
                   Include camera
                 </span>
-                <span className="block text-xs text-echo-text-dim mt-1">
+                <span className="block text-sm text-echo-text-muted mt-1 leading-relaxed">
                   A few still frames during your clip are sent to Gemini with your transcript to read facial
                   expression alongside how you sound. No video file is stored—only text analysis in your entry.
                 </span>
@@ -118,9 +120,9 @@ export default function RecordPage() {
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-echo-accent text-lg mt-3 italic max-w-xs mx-auto"
+            className="text-echo-accent text-base font-medium mt-3 max-w-xs mx-auto leading-snug"
           >
-            "{prompt}"
+            &ldquo;{prompt}&rdquo;
           </motion.p>
         )}
       </motion.div>
@@ -184,7 +186,7 @@ export default function RecordPage() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.8, opacity: 0 }}
                 onClick={handleStart}
-                className="w-16 h-16 rounded-full bg-echo-accent flex items-center justify-center shadow-lg shadow-echo-accent/30 hover:bg-echo-accent/90 transition-colors active:scale-95"
+                className="w-16 h-16 rounded-full bg-echo-accent flex items-center justify-center shadow-md hover:bg-echo-accent/90 transition-colors active:scale-95"
               >
                 <Mic size={24} className="text-white" />
               </motion.button>
@@ -240,7 +242,7 @@ export default function RecordPage() {
 
       {/* Timer text */}
       {(state === 'recording' || state === 'idle') && (
-        <p className="text-echo-text-dim text-sm font-mono tabular-nums">
+        <p className="text-echo-text-muted text-sm font-mono tabular-nums">
           {formatTime(elapsed)} / {formatTime(maxDuration)}
         </p>
       )}
@@ -252,7 +254,7 @@ export default function RecordPage() {
           animate={{ opacity: 1, y: 0 }}
           className="w-full mt-6 p-4 bg-echo-surface border border-echo-border rounded-xl"
         >
-          <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-2">
+          <p className="text-echo-text-muted text-xs font-medium uppercase tracking-wider mb-2">
             Live transcript
           </p>
           <p className="text-echo-text text-sm leading-relaxed">{transcript}</p>
@@ -269,7 +271,7 @@ export default function RecordPage() {
         >
           {/* Transcript */}
           <div className="p-4 bg-echo-surface border border-echo-border rounded-xl">
-            <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-2">
+            <p className="text-echo-text-muted text-xs font-medium uppercase tracking-wider mb-2">
               What you said
             </p>
             <p className="text-echo-text text-sm leading-relaxed">
@@ -289,20 +291,20 @@ export default function RecordPage() {
               <p className="text-echo-text-muted text-sm">{result.summary}</p>
             )}
             {result.speaking_tone && (
-              <p className="text-echo-text-dim text-xs mt-3 leading-relaxed border-l-2 border-echo-accent/40 pl-3">
-                <span className="text-echo-text-muted uppercase tracking-wider text-[10px] block mb-1">
+              <div className="mt-3">
+                <p className="text-echo-text-muted text-xs font-medium uppercase tracking-wider mb-1">
                   Tone
-                </span>
-                {result.speaking_tone}
-              </p>
+                </p>
+                <p className="text-echo-text text-sm leading-relaxed">{result.speaking_tone}</p>
+              </div>
             )}
             {result.facial_affect_summary && (
-              <p className="text-echo-text-dim text-xs mt-3 leading-relaxed border-l-2 border-echo-border pl-3">
-                <span className="text-echo-text-muted uppercase tracking-wider text-[10px] block mb-1">
+              <div className="mt-3">
+                <p className="text-echo-text-muted text-xs font-medium uppercase tracking-wider mb-1">
                   From camera
-                </span>
-                {result.facial_affect_summary}
-              </p>
+                </p>
+                <p className="text-echo-text text-sm leading-relaxed">{result.facial_affect_summary}</p>
+              </div>
             )}
             {result.emotion_context_notes && (
               <EmotionBars data={result.emotion_context_notes} />
@@ -329,7 +331,7 @@ export default function RecordPage() {
                 {result.topics.map((topic, i) => (
                   <span
                     key={i}
-                    className="text-xs text-echo-accent bg-echo-accent/10 px-2.5 py-1 rounded-full"
+                    className="text-xs text-echo-text border border-echo-border bg-echo-card px-2.5 py-1 rounded-full"
                   >
                     {topic}
                   </span>
@@ -374,7 +376,7 @@ export default function RecordPage() {
 }
 
 function DevTypedEntry() {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const navigate = useNavigate();
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -382,14 +384,31 @@ function DevTypedEntry() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!user?.id) {
-      setLocalError('Sign in to save.');
+    if (!user?.id && !isGuest) {
+      setLocalError('Sign in or continue as guest to save.');
       return;
     }
     setBusy(true);
     setLocalError(null);
     try {
-      await saveJournalFromText(user.id, text, 5);
+      if (isGuest) {
+        const recentEntries = readGuestEntries().slice(0, 10);
+        const insights = await extractInsights(text.trim(), {}, { recentEntries });
+        appendGuestEntry({
+          id: `guest-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+          user_id: null,
+          created_at: new Date().toISOString(),
+          transcript: text.trim(),
+          duration_seconds: 5,
+          energy_level: null,
+          speaking_rate: null,
+          pause_ratio: null,
+          pitch_variance: null,
+          ...insights,
+        });
+      } else {
+        await saveJournalFromText(user.id, text, 5);
+      }
       setText('');
       navigate('/');
     } catch (err) {

@@ -1,11 +1,15 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { isGuestMode, setGuestModeEnabled, clearGuestStorage } from '@/lib/guestCookies';
 
 const AuthContext = createContext({});
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isGuest, setIsGuest] = useState(
+    () => typeof window !== 'undefined' && isGuestMode()
+  );
 
   useEffect(() => {
     // Get initial session
@@ -24,6 +28,25 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      if (isGuestMode()) clearGuestStorage();
+      setIsGuest(false);
+    } else {
+      setIsGuest(isGuestMode());
+    }
+  }, [user]);
+
+  const enterGuestMode = useCallback(() => {
+    setGuestModeEnabled(true);
+    setIsGuest(true);
+  }, []);
+
+  const exitGuestMode = useCallback(() => {
+    clearGuestStorage();
+    setIsGuest(false);
+  }, []);
+
   async function signUp(email, password, displayName) {
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -33,6 +56,10 @@ export function AuthProvider({ children }) {
       },
     });
     if (error) throw error;
+    if (data?.session?.user) {
+      clearGuestStorage();
+      setIsGuest(false);
+    }
     return data;
   }
 
@@ -42,6 +69,8 @@ export function AuthProvider({ children }) {
       password,
     });
     if (error) throw error;
+    clearGuestStorage();
+    setIsGuest(false);
     return data;
   }
 
@@ -66,7 +95,18 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, signUp, signIn, signOut, resetPassword, updatePassword }}
+      value={{
+        user,
+        loading,
+        isGuest,
+        enterGuestMode,
+        exitGuestMode,
+        signUp,
+        signIn,
+        signOut,
+        resetPassword,
+        updatePassword,
+      }}
     >
       {children}
     </AuthContext.Provider>

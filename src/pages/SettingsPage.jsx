@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogOut, Shield, Clock, Bell, ChevronRight, User } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getProfile, updateSettings, updateProfile } from '@/lib/supabase';
 
 export default function SettingsPage() {
-  const { user, signOut, updatePassword } = useAuth();
+  const { user, isGuest, exitGuestMode, signOut, updatePassword } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [settings, setSettings] = useState({
     recording_duration: 30,
@@ -104,6 +106,42 @@ export default function SettingsPage() {
     } catch (err) {
       console.error('Sign out failed:', err);
     }
+  }
+
+  if (isGuest && !user) {
+    return (
+      <div className="pt-8 pb-4 space-y-6 max-w-lg">
+        <h1 className="font-pageTitle font-semibold text-3xl md:text-4xl text-echo-text text-left tracking-tight">
+          Account
+        </h1>
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 bg-echo-surface border border-echo-border rounded-xl space-y-4"
+        >
+          <p className="text-echo-text text-sm leading-relaxed">
+            You&apos;re browsing as a guest. Entries are saved in cookies on this device only and won&apos;t sync
+            until you create an account.
+          </p>
+          <Link
+            to="/login"
+            className="block w-full py-2.5 text-center rounded-xl text-sm font-medium bg-echo-accent text-white hover:opacity-95 transition-opacity"
+          >
+            Sign up or log in
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              exitGuestMode();
+              navigate('/login');
+            }}
+            className="w-full py-2.5 rounded-xl text-sm font-medium border border-echo-border text-echo-text hover:bg-echo-card transition-colors"
+          >
+            Exit guest mode
+          </button>
+        </motion.div>
+      </div>
+    );
   }
 
   return (
@@ -282,7 +320,7 @@ export default function SettingsPage() {
 
       {/* Version */}
       <p className="text-center text-echo-text-dim text-[10px] pt-4">
-        Echo Journal v1.0.0 · Build with Gemini 2026
+        Lumos v1.0.0 · Build with Gemini 2026
       </p>
     </div>
   );

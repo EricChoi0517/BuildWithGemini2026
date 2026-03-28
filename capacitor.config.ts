@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.echojournal.app',
-  appName: 'Echo Journal',
+  appId: 'com.lumos.voicejournal.app',
+  appName: 'Lumos',
   webDir: 'dist',
   server: {
     // During development, point to your Vite dev server:

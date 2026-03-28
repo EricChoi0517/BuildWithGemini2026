@@ -1,5 +1,5 @@
 {
-  "name": "echojournal",
+  "name": "lumos",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "cap:init": "cap init EchoJournal com.echojournal.app --web-dir dist",
+    "cap:init": "cap init Lumos com.lumos.voicejournal.app --web-dir dist",
     "cap:add:ios": "cap add ios",
     "cap:sync": "cap sync",
     "cap:open:ios": "cap open ios",

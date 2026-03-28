@@ -194,8 +194,9 @@ export default function TrendChart({ series, metric }) {
       </g>
 
       <g fill="currentColor" className="text-echo-text-dim">
+        {/* Center on full SVG width so label aligns with the card, not only the plot box */}
         <text
-          x={margin.left + innerW / 2}
+          x={width / 2}
           y={axisY + 16}
           textAnchor="middle"
           style={{ fontSize: axisFs + 0.75 }}
@@ -204,7 +205,7 @@ export default function TrendChart({ series, metric }) {
           Past 30 days
         </text>
         <text
-          x={margin.left + innerW / 2}
+          x={width / 2}
           y={axisY + 28}
           textAnchor="middle"
           style={{ fontSize: noteFs }}

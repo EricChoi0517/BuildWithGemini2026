@@ -23,7 +23,7 @@ export default function BottomNav() {
               }
             >
               {primary ? (
-                <div className="flex items-center justify-center w-12 h-12 -mt-6 rounded-full bg-echo-accent shadow-lg shadow-echo-accent/30 text-white">
+                <div className="flex items-center justify-center w-12 h-12 -mt-6 rounded-full bg-echo-accent text-white">
                   <Icon size={22} />
                 </div>
               ) : (

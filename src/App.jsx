@@ -3,6 +3,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Layout from '@/components/Layout';
 import LoginPage from '@/pages/LoginPage';
+import AuthCatchAll from '@/components/AuthCatchAll';
 import HomePage from '@/pages/HomePage';
 import RecordPage from '@/pages/RecordPage';
 import AnalyticsPage from '@/pages/AnalyticsPage';
@@ -34,7 +35,7 @@ export default function App() {
           </Route>
 
           {/* Fallback */}
-          <Route path="*" element={<LoginPage />} />
+          <Route path="*" element={<AuthCatchAll />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

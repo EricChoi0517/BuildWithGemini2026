@@ -1,5 +1,5 @@
 -- ============================================
--- EchoJournal Database Schema
+-- Lumos database schema
 -- Run this in Supabase SQL Editor
 -- ============================================
 

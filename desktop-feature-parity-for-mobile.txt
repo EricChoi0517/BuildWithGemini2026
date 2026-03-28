@@ -1,4 +1,4 @@
-Echo Journal — Desktop feature list for mobile UI/UX parity
+Lumos — Desktop feature list for mobile UI/UX parity
 ===========================================================
 Repository: https://github.com/EricChoi0517/BuildWithGemini2026
 Branch reference: uiux_desktop (March 2026)
