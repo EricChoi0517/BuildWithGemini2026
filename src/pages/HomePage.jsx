@@ -267,6 +267,23 @@ export default function HomePage() {
                 <p className="text-echo-text text-sm leading-relaxed line-clamp-2">
                   {entry.summary || entry.transcript}
                 </p>
+                {entry.speaking_tone && (
+                  <p className="text-echo-text-dim text-[10px] mt-1.5 line-clamp-1 italic">
+                    {entry.speaking_tone}
+                  </p>
+                )}
+                {entry.keywords?.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {entry.keywords.slice(0, 5).map((word, i) => (
+                      <span
+                        key={`k-${i}`}
+                        className="text-[9px] text-echo-text-muted border border-echo-border/80 px-1.5 py-0.5 rounded"
+                      >
+                        {word}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 {entry.topics?.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {entry.topics.slice(0, 3).map((topic, i) => (

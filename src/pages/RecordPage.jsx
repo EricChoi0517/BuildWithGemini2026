@@ -232,6 +232,31 @@ export default function RecordPage() {
             {result.summary && (
               <p className="text-echo-text-muted text-sm">{result.summary}</p>
             )}
+            {result.speaking_tone && (
+              <p className="text-echo-text-dim text-xs mt-3 leading-relaxed border-l-2 border-echo-accent/40 pl-3">
+                <span className="text-echo-text-muted uppercase tracking-wider text-[10px] block mb-1">
+                  Tone
+                </span>
+                {result.speaking_tone}
+              </p>
+            )}
+            {result.keywords?.length > 0 && (
+              <div className="mt-3">
+                <p className="text-echo-text-muted text-[10px] uppercase tracking-wider mb-1.5">
+                  Keywords
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {result.keywords.map((word, i) => (
+                    <span
+                      key={i}
+                      className="text-[11px] text-echo-text bg-echo-card border border-echo-border px-2 py-0.5 rounded-md"
+                    >
+                      {word}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             {result.topics?.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-3">
                 {result.topics.map((topic, i) => (

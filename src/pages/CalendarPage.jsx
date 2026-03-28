@@ -184,6 +184,29 @@ export default function CalendarPage() {
                 </p>
               </div>
 
+              {selectedEntry.speaking_tone && (
+                <div className="mb-4">
+                  <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-2">Tone</p>
+                  <p className="text-echo-text-muted text-sm leading-relaxed">{selectedEntry.speaking_tone}</p>
+                </div>
+              )}
+
+              {selectedEntry.keywords?.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-2">Keywords</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedEntry.keywords.map((word, i) => (
+                      <span
+                        key={i}
+                        className="text-xs bg-echo-card border border-echo-border text-echo-text-muted px-2.5 py-1 rounded-md"
+                      >
+                        {word}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Topics */}
               {selectedEntry.topics?.length > 0 && (
                 <div className="mb-4">

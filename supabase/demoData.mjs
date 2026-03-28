@@ -257,6 +257,8 @@ export function buildEntryRows(persona, userId) {
       sentiment_label: sentimentLabel(sentiment_score),
       entities: inferEntities(persona.key, i),
       topics: inferTopics(persona.key, i),
+      keywords: inferKeywords(persona.key, i),
+      speaking_tone: inferSpeakingTone(persona.key, sentiment_score),
       unresolved_threads: inferThreads(persona.key, i),
       summary: transcript.slice(0, Math.min(120, transcript.length)) + (transcript.length > 120 ? '…' : ''),
       is_demo: true,
@@ -291,6 +293,32 @@ function inferThreads(key, i) {
   if (key === 'student' && i > 10 && i < 18) return ['Grad school vs industry'];
   if (key === 'parent' && i < 10) return ['Return-to-work timing'];
   return [];
+}
+
+function inferKeywords(key, i) {
+  const t = inferTopics(key, i);
+  const e = inferEntities(key, i);
+  const extra =
+    key === 'founder'
+      ? ['runway', 'burn rate', 'deck', 'Slack']
+      : key === 'student'
+        ? ['GPA', 'library', 'deadline', 'roommate']
+        : ['nap', 'bottle', 'pediatrician', 'leave'];
+  return [...new Set([...t, ...e, extra[i % extra.length]])].slice(0, 6);
+}
+
+function inferSpeakingTone(key, score) {
+  if (key === 'founder') {
+    if (score < -0.2) return 'Tired, compressed sentences; worry under the surface.';
+    if (score > 0.2) return 'Cautiously upbeat; relief when something lands.';
+    return 'Matter-of-fact, scanning for problems.';
+  }
+  if (key === 'student') {
+    if (score < -0.15) return 'Stressed pacing; shorter clauses before exams.';
+    return 'Conversational, a little self-deprecating.';
+  }
+  if (score < -0.2) return 'Soft, fragmented; running on little sleep.';
+  return 'Warmer and steadier as the week improves.';
 }
 
 export function buildWeeklyRows(persona, userId) {

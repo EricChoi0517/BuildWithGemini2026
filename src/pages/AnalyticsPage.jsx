@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Users, TrendingUp, MessageCircle, Clock } from 'lucide-react';
+import { Sparkles, Users, TrendingUp, MessageCircle, Clock, Repeat } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getEntries, getInsights, getWeeklySummaries } from '@/lib/supabase';
 import { ensurePastWeekSummary } from '@/lib/weeklySummary';
@@ -15,6 +15,7 @@ const INSIGHT_ICONS = {
   vocabulary_drift: MessageCircle,
   memory_anchor: Clock,
   this_time_last_month: Clock,
+  recurring_trend: Repeat,
 };
 
 export default function AnalyticsPage() {
@@ -84,6 +85,17 @@ export default function AnalyticsPage() {
   const topTopics = Object.entries(topicCounts)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10);
+
+  const allKeywords = entries.flatMap((e) => e.keywords || []);
+  const keywordCounts = {};
+  for (const k of allKeywords) {
+    const key = String(k).trim().toLowerCase();
+    if (key.length < 2) continue;
+    keywordCounts[key] = (keywordCounts[key] || 0) + 1;
+  }
+  const topKeywords = Object.entries(keywordCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 12);
 
   // Sentiment over time (last 14 days)
   const last14 = entries
@@ -189,6 +201,26 @@ export default function AnalyticsPage() {
                   >
                     {topic}
                     <span className="text-echo-text-dim ml-1.5">{count}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {topKeywords.length > 0 && (
+            <div className="p-4 bg-echo-surface border border-echo-border rounded-xl">
+              <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <Repeat size={12} className="opacity-70" />
+                Keywords (trending)
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {topKeywords.map(([word, count]) => (
+                  <span
+                    key={word}
+                    className="text-xs px-3 py-1.5 rounded-full bg-echo-accent/10 text-echo-text border border-echo-accent/25"
+                  >
+                    {word}
+                    <span className="text-echo-text-dim ml-1.5">{count}×</span>
                   </span>
                 ))}
               </div>

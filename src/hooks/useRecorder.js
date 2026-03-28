@@ -35,7 +35,7 @@ export function useRecorder() {
       setError(null);
       transcriptRef.current = '';
 
-      // Connect to Gemini Live API
+      // Live API first — wait for setup before sending mic audio (otherwise chunks are dropped).
       liveApiRef.current = connectLiveAPI({
         onTranscript: (text) => {
           transcriptRef.current += text;
@@ -43,14 +43,23 @@ export function useRecorder() {
         },
         onError: (err) => {
           console.error('Live API error:', err);
-          setError('Connection to Gemini failed. Your recording was saved locally.');
+          setError('Live transcription failed. Check API key and console.');
         },
         onClose: () => {
           console.log('Live API disconnected');
         },
       });
 
-      // Initialize audio recorder
+      try {
+        await liveApiRef.current.whenReady();
+      } catch (err) {
+        console.error('Live API setup failed:', err);
+        liveApiRef.current?.disconnect();
+        setState('error');
+        setError(err?.message || 'Could not start live transcription.');
+        return;
+      }
+
       recorderRef.current = await initAudioRecorder({
         onWaveformData: setWaveformData,
         onAudioChunk: (base64) => {
@@ -91,11 +100,10 @@ export function useRecorder() {
     // Stop audio recorder and get acoustic features
     const acousticFeatures = recorderRef.current?.stop();
 
-    // Signal end of audio to Live API
+    // Tell Live API audio is done + end turn (lets input transcription finish)
     liveApiRef.current?.endAudio();
 
-    // Wait a beat for final transcription
-    await new Promise((r) => setTimeout(r, 1500));
+    await new Promise((r) => setTimeout(r, 2800));
 
     const finalTranscript = transcriptRef.current;
     liveApiRef.current?.disconnect();

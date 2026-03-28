@@ -63,6 +63,8 @@ create table entries (
   topics text[],              -- extracted themes
   unresolved_threads text[],  -- things mentioned with weight, not revisited
   summary text,               -- one-line summary of entry
+  keywords text[],            -- salient words/phrases (distinct from broad topics)
+  speaking_tone text,         -- inferred delivery / emotional tone of how they spoke
 
   -- Metadata
   is_demo boolean default false,
