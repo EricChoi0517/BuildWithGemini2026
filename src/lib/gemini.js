@@ -310,17 +310,18 @@ function heuristicExtractionFromAudio(transcript, acoustic = {}, recentEntries =
   }
 
   const toneParts = [];
-  if (e < 0.32) toneParts.push('softer, lower energy in your voice');
-  if (e > 0.62) toneParts.push('higher energy and animation');
-  if (pr > 0.48) toneParts.push('more pauses between phrases');
-  if (sr > 145) toneParts.push('relatively fast pacing');
-  if (sr < 95) toneParts.push('slower, measured pacing');
-  if (pv > 0.45) toneParts.push('more pitch variation (expressive)');
-  if (pv < 0.22 && e < 0.42) toneParts.push('flatter, steadier delivery');
+  if (e < 0.32) toneParts.push('soft', 'low-energy');
+  if (e > 0.62) toneParts.push('animated', 'high-energy');
+  if (pr > 0.48) toneParts.push('hesitant', 'contemplative');
+  if (sr > 145) toneParts.push('fast-paced', 'engaged');
+  if (sr < 95) toneParts.push('measured', 'slow');
+  if (pv > 0.45) toneParts.push('expressive', 'dynamic');
+  if (pv < 0.22 && e < 0.42) toneParts.push('flat', 'steady');
+  
   const speaking_tone =
     toneParts.length > 0
-      ? `${toneParts.join('; ')} (from your recording’s audio features).`
-      : 'Steady delivery — estimated from your recording’s audio features.';
+      ? toneParts.join(', ')
+      : 'steady, neutral, measured';
   const clip = t.slice(0, 280);
   const summary =
     clip.length > 0
@@ -749,7 +750,7 @@ Rules:
 - sentiment_score: -1.0 to 1.0; when delivery contradicts content, keep score moderate unless words are clearly celebratory or clearly devastating.
 - emotion_context_notes: REQUIRED (string). Provide a stringified JSON object representing percentage probabilities for basic emotions (Happiness, Sadness, Anger, Fear, Surprise, Disgust) that sum to exactly 100. Format strictly as a valid JSON string (e.g. "{\\"Happiness\\": 80, \\"Sadness\\": 0, \\"Anger\\": 0, \\"Fear\\": 20, \\"Surprise\\": 0, \\"Disgust\\": 0}"). Do not include other explanatory text.
 - prompt_adherence: If a journal prompt was given above, one concise sentence on how their speech relates to it; if none was given, null.
-- speaking_tone: how they sound + how it relates to words (and face if any).
+- speaking_tone: REQUIRED (string). A comma-separated list of 3-5 descriptive adjectives summarizing their tone and delivery (e.g., "calm, measured, slightly hesitant"). Do NOT use full sentences.
 - summary: one neutral sentence on what they shared (what they actually talked about, not the prompt text unless they engaged it).
 - Output ONLY valid JSON (no markdown).
 
