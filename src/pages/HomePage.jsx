@@ -72,29 +72,56 @@ export default function HomePage() {
         <h1 className="font-display text-2xl text-echo-text mt-1">{displayName}</h1>
       </motion.div>
 
-      {/* Quick Record CTA */}
+      {/* Empty State / Welcome */}
       {entries.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
+          className="space-y-8"
         >
-          <Link
-            to="/record"
-            className="block p-6 bg-gradient-to-br from-echo-accent/10 to-echo-accent/5 border border-echo-accent/20 rounded-2xl"
-          >
-            <div className="flex items-center gap-4">
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-echo-accent/20">
-                <Mic size={20} className="text-echo-accent" />
+          <div className="p-8 bg-gradient-to-br from-echo-accent/10 via-echo-surface to-echo-surface border border-echo-accent/20 rounded-3xl text-center space-y-6">
+            <div className="w-16 h-16 bg-echo-accent/10 rounded-full flex items-center justify-center mx-auto mb-2">
+              <Mic size={32} className="text-echo-accent" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-display text-echo-text">Your emotional space</h2>
+              <p className="text-echo-text-muted text-sm max-w-xs mx-auto">
+                Echo helps you track your journey through voice. Record how you feel, and we'll help you see the patterns.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-left">
+              <div className="p-3 bg-echo-surface/50 rounded-xl border border-echo-border/50">
+                <p className="text-[10px] text-echo-accent font-bold uppercase tracking-wider mb-1">Step 1</p>
+                <p className="text-xs text-echo-text font-medium">Record a 30s check-in</p>
               </div>
-              <div>
-                <p className="text-echo-text font-medium">Record your first entry</p>
-                <p className="text-echo-text-muted text-sm mt-0.5">
-                  Just 30 seconds — say whatever's on your mind.
-                </p>
+              <div className="p-3 bg-echo-surface/50 rounded-xl border border-echo-border/50">
+                <p className="text-[10px] text-echo-accent font-bold uppercase tracking-wider mb-1">Step 2</p>
+                <p className="text-xs text-echo-text font-medium">Get instant mood insights</p>
               </div>
             </div>
-          </Link>
+
+            <Link
+              to="/record"
+              className="block w-full py-4 bg-echo-accent text-white rounded-2xl font-medium shadow-lg shadow-echo-accent/30 hover:bg-echo-accent/90 transition-all active:scale-[0.98]"
+            >
+              Start Your First Entry
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 px-2">
+            {[
+              { label: 'Private', icon: '🔒' },
+              { label: 'Biometric', icon: '🧘' },
+              { label: 'Insightful', icon: '✨' }
+            ].map((feature, i) => (
+              <div key={i} className="text-center space-y-1">
+                <div className="text-xl">{feature.icon}</div>
+                <p className="text-[10px] text-echo-text-dim font-medium uppercase tracking-tighter">{feature.label}</p>
+              </div>
+            ))}
+          </div>
         </motion.div>
       ) : null}
 
