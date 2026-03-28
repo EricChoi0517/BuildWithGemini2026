@@ -23,10 +23,20 @@ body,
 
 body {
   font-family: 'DM Sans', sans-serif;
-  background-color: #F8F8FC;
-  color: #1E1B2E;
+  background-color: #F5F0E8;
+  color: #2C2720;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Subtle warmth on large screens */
+@media (min-width: 768px) {
+  body {
+    background-image:
+      radial-gradient(ellipse 120% 80% at 100% 0%, rgba(232, 223, 210, 0.7) 0%, transparent 50%),
+      radial-gradient(ellipse 80% 60% at 0% 100%, rgba(239, 232, 221, 0.5) 0%, transparent 45%);
+    background-attachment: fixed;
+  }
 }
 
 /* Safe area padding for Capacitor/iOS */
@@ -54,8 +64,15 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #DDD8F0;
-  border-radius: 2px;
+  background: #D9CFC0;
+  border-radius: 4px;
+}
+
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
 }
 
 /* Mood dot glow effect */

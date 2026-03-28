@@ -143,7 +143,7 @@ export default function CalendarPage() {
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-lg bg-echo-surface border-t border-echo-border rounded-t-3xl p-6 max-h-[70vh] overflow-y-auto"
+              className="w-full max-w-lg md:max-w-xl lg:max-w-2xl bg-echo-surface border-t border-echo-border rounded-t-3xl md:rounded-2xl md:border md:shadow-xl p-6 max-h-[70vh] overflow-y-auto"
             >
               {/* Handle */}
               <div className="w-10 h-1 bg-echo-border rounded-full mx-auto mb-4" />

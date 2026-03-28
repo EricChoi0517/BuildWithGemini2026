@@ -1,20 +1,13 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Mic, Calendar, BarChart3, Settings } from 'lucide-react';
-
-const tabs = [
-  { to: '/', icon: Home, label: 'Home' },
-  { to: '/calendar', icon: Calendar, label: 'Calendar' },
-  { to: '/record', icon: Mic, label: 'Record', primary: true },
-  { to: '/analytics', icon: BarChart3, label: 'Analytics' },
-  { to: '/settings', icon: Settings, label: 'Settings' },
-];
+import { MAIN_NAV } from './navConfig';
 
 export default function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-echo-surface/90 backdrop-blur-xl border-t border-echo-border">
-      <div className="flex items-center justify-around max-w-lg mx-auto"
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-echo-surface/95 backdrop-blur-xl border-t border-echo-border shadow-[0_-4px_24px_rgba(44,39,32,0.06)]">
+      <div
+        className="flex items-center justify-around max-w-lg mx-auto"
         style={{ paddingBottom: 'var(--safe-bottom, 8px)' }}>
-        {tabs.map(({ to, icon: Icon, label, primary }) => (
+        {MAIN_NAV.map(({ to, icon: Icon, label, primary }) => (
           <NavLink
             key={to}
             to={to}
