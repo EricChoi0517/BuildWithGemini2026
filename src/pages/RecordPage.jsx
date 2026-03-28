@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, Square, Check, RotateCcw } from 'lucide-react';
+import { Mic, Square, Check, RotateCcw, Video } from 'lucide-react';
 import { useRecorder } from '@/hooks/useRecorder';
 import { useAuth } from '@/context/AuthContext';
 import { saveJournalFromText } from '@/lib/saveJournalFromText';
 import Waveform from '@/components/Waveform';
-import MoodDot from '@/components/MoodDot';
+import MoodDot, { formatMoodLabel } from '@/components/MoodDot';
 
 const PROMPTS = [
   'Tell me about the best part of your day so far.',
@@ -32,6 +32,7 @@ const PROMPTS = [
 ];
 
 export default function RecordPage() {
+  const [includeCamera, setIncludeCamera] = useState(false);
   const {
     state,
     elapsed,
@@ -40,12 +41,25 @@ export default function RecordPage() {
     transcript,
     result,
     error,
+    cameraStream,
     startRecording,
     stopRecording,
     reset,
-  } = useRecorder();
+  } = useRecorder({ useWebcam: includeCamera });
 
   const [prompt, setPrompt] = useState('');
+  const videoPreviewRef = useRef(null);
+
+  useEffect(() => {
+    const el = videoPreviewRef.current;
+    if (!el) return;
+    if (cameraStream) {
+      el.srcObject = cameraStream;
+      el.play().catch(() => {});
+    } else {
+      el.srcObject = null;
+    }
+  }, [cameraStream]);
 
   const progress = elapsed / maxDuration;
 
@@ -70,9 +84,29 @@ export default function RecordPage() {
           {state === 'error' && 'Something went wrong'}
         </h1>
         {state === 'idle' && (
-          <p className="text-echo-text-muted text-sm mt-2">
-            Tap the mic to start. 30 seconds max.
-          </p>
+          <div className="mt-3 space-y-2 max-w-sm mx-auto">
+            <p className="text-echo-text-muted text-sm">
+              Tap the mic to start. 30 seconds max.
+            </p>
+            <label className="flex items-start gap-3 cursor-pointer text-left px-1">
+              <input
+                type="checkbox"
+                checked={includeCamera}
+                onChange={(e) => setIncludeCamera(e.target.checked)}
+                className="mt-1 rounded border-echo-border text-echo-accent focus:ring-echo-accent"
+              />
+              <span className="text-sm text-echo-text-muted leading-snug">
+                <span className="inline-flex items-center gap-1.5 text-echo-text font-medium">
+                  <Video size={16} className="text-echo-accent shrink-0" />
+                  Include camera
+                </span>
+                <span className="block text-xs text-echo-text-dim mt-1">
+                  A few still frames during your clip are sent to Gemini with your transcript to read facial
+                  expression alongside how you sound. No video file is stored—only text analysis in your entry.
+                </span>
+              </span>
+            </label>
+          </div>
         )}
         {state === 'recording' && prompt && (
           <motion.p
@@ -85,6 +119,23 @@ export default function RecordPage() {
           </motion.p>
         )}
       </motion.div>
+
+      {/* Webcam preview (optional) */}
+      {state === 'recording' && cameraStream && (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-[280px] mx-auto mb-6 rounded-xl overflow-hidden border border-echo-border bg-black shadow-lg"
+        >
+          <video
+            ref={videoPreviewRef}
+            className="w-full aspect-video object-cover scale-x-[-1]"
+            playsInline
+            muted
+            autoPlay
+          />
+        </motion.div>
+      )}
 
       {/* Waveform */}
       <div className="w-full mb-8">
@@ -225,8 +276,8 @@ export default function RecordPage() {
           <div className="p-4 bg-echo-surface border border-echo-border rounded-xl">
             <div className="flex items-center gap-3 mb-3">
               <MoodDot score={result.sentiment_score} size={14} />
-              <span className="text-echo-text text-sm font-medium capitalize">
-                {result.sentiment_label} mood
+              <span className="text-echo-text text-sm font-medium">
+                {formatMoodLabel(result.sentiment_label)} mood
               </span>
             </div>
             {result.summary && (
@@ -238,6 +289,22 @@ export default function RecordPage() {
                   Tone
                 </span>
                 {result.speaking_tone}
+              </p>
+            )}
+            {result.facial_affect_summary && (
+              <p className="text-echo-text-dim text-xs mt-3 leading-relaxed border-l-2 border-echo-border pl-3">
+                <span className="text-echo-text-muted uppercase tracking-wider text-[10px] block mb-1">
+                  From camera
+                </span>
+                {result.facial_affect_summary}
+              </p>
+            )}
+            {result.emotion_context_notes && (
+              <p className="text-echo-text-dim text-xs mt-3 leading-relaxed border-l-2 border-echo-accent/25 pl-3">
+                <span className="text-echo-text-muted uppercase tracking-wider text-[10px] block mb-1">
+                  Context & changes
+                </span>
+                {result.emotion_context_notes}
               </p>
             )}
             {result.keywords?.length > 0 && (

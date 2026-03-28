@@ -259,6 +259,8 @@ export function buildEntryRows(persona, userId) {
       topics: inferTopics(persona.key, i),
       keywords: inferKeywords(persona.key, i),
       speaking_tone: inferSpeakingTone(persona.key, sentiment_score),
+      facial_affect_summary: inferFacialAffect(persona.key, sentiment_score),
+      emotion_context_notes: null,
       unresolved_threads: inferThreads(persona.key, i),
       summary: transcript.slice(0, Math.min(120, transcript.length)) + (transcript.length > 120 ? '…' : ''),
       is_demo: true,
@@ -305,6 +307,20 @@ function inferKeywords(key, i) {
         ? ['GPA', 'library', 'deadline', 'roommate']
         : ['nap', 'bottle', 'pediatrician', 'leave'];
   return [...new Set([...t, ...e, extra[i % extra.length]])].slice(0, 6);
+}
+
+function inferFacialAffect(key, score) {
+  if (key === 'founder') {
+    if (score < -0.2) return 'Demo: drawn expression, less eye contact.';
+    if (score > 0.25) return 'Demo: slightly more open, small smiles.';
+    return 'Demo: focused, neutral face.';
+  }
+  if (key === 'student') {
+    if (score < -0.15) return 'Demo: tense jaw, tired eyes.';
+    return 'Demo: relaxed, casual expression.';
+  }
+  if (score < -0.2) return 'Demo: fatigued, softer gaze.';
+  return 'Demo: calm, attentive.';
 }
 
 function inferSpeakingTone(key, score) {

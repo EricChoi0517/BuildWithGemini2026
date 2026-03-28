@@ -1,5 +1,5 @@
 import { extractInsights } from '@/lib/gemini';
-import { saveEntry } from '@/lib/supabase';
+import { saveEntry, getEntries } from '@/lib/supabase';
 import { runPostEntryHeuristics } from '@/lib/insights';
 
 /**
@@ -10,8 +10,15 @@ export async function saveJournalFromText(userId, transcript, durationSeconds = 
   const trimmed = transcript.trim();
   if (!trimmed) throw new Error('Transcript is empty');
 
+  let recentEntries = [];
+  try {
+    recentEntries = (await getEntries(userId, { limit: 10 })) || [];
+  } catch {
+    /* optional context */
+  }
+
   const acoustic = {};
-  const insights = await extractInsights(trimmed, acoustic);
+  const insights = await extractInsights(trimmed, acoustic, { recentEntries });
 
   const entry = await saveEntry({
     user_id: userId,

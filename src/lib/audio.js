@@ -14,15 +14,20 @@ export async function initAudioRecorder({
   onWaveformData,
   onAudioChunk,
   sampleRate = 16000,
+  /** Shared mic (+ optional camera) stream; if omitted, requests audio-only. */
+  mediaStream = null,
 }) {
-  const stream = await navigator.mediaDevices.getUserMedia({
-    audio: {
-      sampleRate,
-      channelCount: 1,
-      echoCancellation: true,
-      noiseSuppression: true,
-    },
-  });
+  const sharedStream = !!mediaStream;
+  const stream =
+    mediaStream ||
+    (await navigator.mediaDevices.getUserMedia({
+      audio: {
+        sampleRate,
+        channelCount: 1,
+        echoCancellation: true,
+        noiseSuppression: true,
+      },
+    }));
 
   const audioContext = new AudioContext(); // use mic's native sample rate
   const source = audioContext.createMediaStreamSource(stream);
@@ -83,10 +88,14 @@ export async function initAudioRecorder({
         sampleRate
       );
 
-      // Cleanup
+      // Cleanup — shared AV stream: stop mic only; caller stops video tracks
       processor.disconnect();
       source.disconnect();
-      stream.getTracks().forEach((t) => t.stop());
+      if (sharedStream) {
+        stream.getAudioTracks().forEach((t) => t.stop());
+      } else {
+        stream.getTracks().forEach((t) => t.stop());
+      }
       audioContext.close();
 
       return features;

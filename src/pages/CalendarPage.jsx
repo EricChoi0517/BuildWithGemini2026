@@ -191,6 +191,26 @@ export default function CalendarPage() {
                 </div>
               )}
 
+              {selectedEntry.facial_affect_summary && (
+                <div className="mb-4">
+                  <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-2">From camera</p>
+                  <p className="text-echo-text-muted text-sm leading-relaxed">
+                    {selectedEntry.facial_affect_summary}
+                  </p>
+                </div>
+              )}
+
+              {selectedEntry.emotion_context_notes && (
+                <div className="mb-4">
+                  <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-2">
+                    Context & changes
+                  </p>
+                  <p className="text-echo-text-muted text-sm leading-relaxed">
+                    {selectedEntry.emotion_context_notes}
+                  </p>
+                </div>
+              )}
+
               {selectedEntry.keywords?.length > 0 && (
                 <div className="mb-4">
                   <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-2">Keywords</p>
