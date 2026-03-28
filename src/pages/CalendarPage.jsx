@@ -58,7 +58,7 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="pt-8 pb-4">
+    <div className="pt-8 pb-4 h-full overflow-hidden">
       {/* Month Navigation */}
       <div className="flex items-center justify-between mb-6">
         <button
@@ -88,7 +88,7 @@ export default function CalendarPage() {
       </div>
 
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-1 p-1">
         {days.map((day, i) => {
           const entry = getEntryForDay(day);
           const inMonth = isSameMonth(day, currentMonth);
@@ -145,10 +145,7 @@ export default function CalendarPage() {
               onClick={(e) => e.stopPropagation()}
               className="w-full max-w-lg bg-echo-surface border-t border-echo-border rounded-t-3xl p-6 pb-12 max-h-[85vh] overflow-y-auto"
             >
-              {/* Handle */}
               <div className="w-10 h-1 bg-echo-border rounded-full mx-auto mb-4" />
-
-              {/* Header */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <MoodDot score={selectedEntry.sentiment_score} size={12} />
@@ -161,87 +158,55 @@ export default function CalendarPage() {
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setSelectedEntry(null)}
-                  className="p-1.5 text-echo-text-dim hover:text-echo-text"
-                >
+                <button onClick={() => setSelectedEntry(null)} className="p-1.5 text-echo-text-dim hover:text-echo-text">
                   <X size={18} />
                 </button>
               </div>
-
-              {/* Summary */}
               {selectedEntry.summary && (
-                <p className="text-echo-text-muted text-sm mb-4 italic">
-                  "{selectedEntry.summary}"
-                </p>
+                <p className="text-echo-text-muted text-sm mb-4 italic">"{selectedEntry.summary}"</p>
               )}
-
-              {/* Transcript */}
               <div className="mb-4">
                 <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-2">Transcript</p>
-                <p className="text-echo-text text-sm leading-relaxed">
-                  {selectedEntry.transcript}
-                </p>
+                <p className="text-echo-text text-sm leading-relaxed">{selectedEntry.transcript}</p>
               </div>
-
               {selectedEntry.speaking_tone && (
                 <div className="mb-4">
                   <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-2">Tone</p>
                   <p className="text-echo-text-muted text-sm leading-relaxed">{selectedEntry.speaking_tone}</p>
                 </div>
               )}
-
               {selectedEntry.facial_affect_summary && (
                 <div className="mb-4">
                   <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-2">From camera</p>
-                  <p className="text-echo-text-muted text-sm leading-relaxed">
-                    {selectedEntry.facial_affect_summary}
-                  </p>
+                  <p className="text-echo-text-muted text-sm leading-relaxed">{selectedEntry.facial_affect_summary}</p>
                 </div>
               )}
-
               {selectedEntry.emotion_context_notes && (
                 <div className="mb-4">
-                  <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-2">
-                    Context & changes
-                  </p>
-                  <p className="text-echo-text-muted text-sm leading-relaxed">
-                    {selectedEntry.emotion_context_notes}
-                  </p>
+                  <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-2">Context & changes</p>
+                  <p className="text-echo-text-muted text-sm leading-relaxed">{selectedEntry.emotion_context_notes}</p>
                 </div>
               )}
-
               {selectedEntry.keywords?.length > 0 && (
                 <div className="mb-4">
                   <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-2">Keywords</p>
                   <div className="flex flex-wrap gap-1.5">
                     {selectedEntry.keywords.map((word, i) => (
-                      <span
-                        key={i}
-                        className="text-xs bg-echo-card border border-echo-border text-echo-text-muted px-2.5 py-1 rounded-md"
-                      >
-                        {word}
-                      </span>
+                      <span key={i} className="text-xs bg-echo-card border border-echo-border text-echo-text-muted px-2.5 py-1 rounded-md">{word}</span>
                     ))}
                   </div>
                 </div>
               )}
-
-              {/* Topics */}
               {selectedEntry.topics?.length > 0 && (
                 <div className="mb-4">
                   <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-2">Topics</p>
                   <div className="flex flex-wrap gap-1.5">
                     {selectedEntry.topics.map((topic, i) => (
-                      <span key={i} className="text-xs text-echo-accent bg-echo-accent/10 px-2.5 py-1 rounded-full">
-                        {topic}
-                      </span>
+                      <span key={i} className="text-xs text-echo-accent bg-echo-accent/10 px-2.5 py-1 rounded-full">{topic}</span>
                     ))}
                   </div>
                 </div>
               )}
-
-              {/* Acoustic Features */}
               <div className="grid grid-cols-2 gap-3">
                 <AcousticStat label="Energy" value={selectedEntry.energy_level} />
                 <AcousticStat label="Speaking Rate" value={selectedEntry.speaking_rate} suffix=" wpm" />
