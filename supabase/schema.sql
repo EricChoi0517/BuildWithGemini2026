@@ -65,6 +65,8 @@ create table entries (
   summary text,               -- one-line summary of entry
   keywords text[],            -- salient words/phrases (distinct from broad topics)
   speaking_tone text,         -- inferred delivery / emotional tone of how they spoke
+  facial_affect_summary text, -- visible expression / demeanor from optional webcam stills (Gemini)
+  emotion_context_notes text, -- discrepancies (hyperbolic vs sad content, face vs words) + vs prior sessions
 
   -- Metadata
   is_demo boolean default false,

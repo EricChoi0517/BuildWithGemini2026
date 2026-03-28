@@ -61,4 +61,11 @@ function lerpColor(a, b, t) {
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${blue.toString(16).padStart(2, '0')}`;
 }
 
+/** Display slug like hyperbolic_or_performative → title text */
+export function formatMoodLabel(label) {
+  if (label == null || label === '') return 'Neutral';
+  const s = String(label).trim().replace(/_/g, ' ');
+  return s.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export { getMoodColor };
