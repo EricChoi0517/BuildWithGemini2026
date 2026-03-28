@@ -14,15 +14,17 @@
   -webkit-touch-callout: none;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   overscroll-behavior: none;
 }
 
 body {
   font-family: 'DM Sans', sans-serif;
-  background-color: #0A0A0F;
-  color: #E8E6F0;
+  background-color: #F8F8FC;
+  color: #1E1B2E;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -33,7 +35,8 @@ body {
 }
 
 .safe-bottom {
-  padding-bottom: calc(var(--safe-bottom) + 80px); /* 80px for bottom nav */
+  padding-bottom: calc(var(--safe-bottom) + 80px);
+  /* 80px for bottom nav */
 }
 
 /* Waveform canvas styles */
@@ -51,7 +54,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2A2A3A;
+  background: #DDD8F0;
   border-radius: 2px;
 }
 
@@ -67,9 +70,12 @@ body {
 
 /* Pulse animation for recording */
 @keyframes pulse-record {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.4);
   }
+
   50% {
     box-shadow: 0 0 0 20px rgba(248, 113, 113, 0);
   }
@@ -85,6 +91,7 @@ body {
     opacity: 0;
     transform: translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -96,10 +103,12 @@ body {
 }
 
 /* Input styles */
-input, textarea {
+input,
+textarea {
   font-family: 'DM Sans', sans-serif;
 }
 
-input:focus, textarea:focus {
+input:focus,
+textarea:focus {
   outline: none;
 }

@@ -26,7 +26,7 @@ export default function MoodDot({ score, size = 12, onClick, date }) {
  * Smooth gradient: red → amber → green
  */
 function getMoodColor(score) {
-  if (score == null) return '#2A2A3A';
+  if (score == null) return '#DDD8F0';
 
   // Clamp to -1 to 1
   const s = Math.max(-1, Math.min(1, score));
@@ -37,13 +37,13 @@ function getMoodColor(score) {
   if (t < 0.4) {
     // Red to Amber
     const p = t / 0.4;
-    return lerpColor('#F87171', '#FBBF24', p);
+    return lerpColor('#EF4444', '#F59E0B', p);
   } else if (t > 0.6) {
     // Amber to Green
     const p = (t - 0.6) / 0.4;
-    return lerpColor('#FBBF24', '#4ADE80', p);
+    return lerpColor('#F59E0B', '#22C55E', p);
   }
-  return '#FBBF24'; // Amber zone
+  return '#F59E0B'; // Amber zone
 }
 
 function lerpColor(a, b, t) {

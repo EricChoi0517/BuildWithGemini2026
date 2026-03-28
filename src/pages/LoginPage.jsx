@@ -46,7 +46,7 @@ export default function LoginPage() {
         {/* Logo / Brand */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-echo-accent/10 border border-echo-accent/20 mb-4">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6C63FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7C6CFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
               <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
               <line x1="12" x2="12" y1="19" y2="22" />
@@ -64,11 +64,10 @@ export default function LoginPage() {
             <button
               key={m}
               onClick={() => { setMode(m); setError(''); }}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                mode === m
+              className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${mode === m
                   ? 'bg-echo-accent text-white shadow-lg shadow-echo-accent/20'
                   : 'text-echo-text-muted hover:text-echo-text'
-              }`}
+                }`}
             >
               {m === 'login' ? 'Log In' : 'Sign Up'}
             </button>

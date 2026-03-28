@@ -58,14 +58,14 @@ export default function RecordPage() {
           <circle
             cx="80" cy="80" r="72"
             fill="none"
-            stroke="#2A2A3A"
+            stroke="#DDD8F0"
             strokeWidth="4"
           />
           {/* Progress ring */}
           <circle
             cx="80" cy="80" r="72"
             fill="none"
-            stroke={state === 'recording' ? '#6C63FF' : '#2A2A3A'}
+            stroke={state === 'recording' ? '#7C6CFF' : '#DDD8F0'}
             strokeWidth="4"
             strokeLinecap="round"
             strokeDasharray={`${2 * Math.PI * 72}`}
