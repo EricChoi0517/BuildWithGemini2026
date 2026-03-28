@@ -71,18 +71,18 @@ export default function RecordPage() {
   }
 
   return (
-    <div className="pt-8 pb-4 flex flex-col items-center min-h-[calc(100vh-120px)]">
+    <div className="pt-4 pb-4 flex flex-col items-center min-h-[calc(100vh-120px)]">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="text-center mb-8"
+        className="text-center mb-4"
       >
         <h1 className="font-display text-2xl text-echo-text text-center">
           {state === 'idle' && 'Ready to record'}
           {state === 'recording' && 'Listening...'}
           {state === 'processing' && 'Processing...'}
-          {state === 'done' && 'Entry saved'}
+          {state === 'done' && ''}
           {state === 'error' && 'Something went wrong'}
         </h1>
         {state === 'idle' && (
@@ -142,36 +142,32 @@ export default function RecordPage() {
         </motion.div>
       )}
 
-      {/* Waveform — hidden once entry is saved */}
-      {state !== 'done' && state !== 'error' && (
-        <div className="w-full mb-8">
-          <Waveform
-            data={waveformData}
-            isRecording={state === 'recording'}
-          />
-        </div>
-      )}
+      {/* Waveform */}
+      <div className="w-full mb-4">
+        <Waveform
+          data={waveformData}
+          isRecording={state === 'recording'}
+        />
+      </div>
 
-      {/* Timer Ring — hidden once entry is saved */}
-      {state !== 'done' && state !== 'error' && (
-      <div className="relative mb-8">
-        <svg width="160" height="160" viewBox="0 0 160 160" className="-rotate-90">
+      <div className="relative mb-4">
+        <svg width="120" height="120" viewBox="0 0 120 120" className="-rotate-90">
           {/* Background ring */}
           <circle
-            cx="80" cy="80" r="72"
+            cx="60" cy="60" r="52"
             fill="none"
             stroke="#DDD8F0"
             strokeWidth="4"
           />
           {/* Progress ring */}
           <circle
-            cx="80" cy="80" r="72"
+            cx="60" cy="60" r="52"
             fill="none"
             stroke={state === 'recording' ? '#7C6CFF' : '#DDD8F0'}
             strokeWidth="4"
             strokeLinecap="round"
-            strokeDasharray={`${2 * Math.PI * 72}`}
-            strokeDashoffset={`${2 * Math.PI * 72 * (1 - progress)}`}
+            strokeDasharray={`${2 * Math.PI * 52}`}
+            strokeDashoffset={`${2 * Math.PI * 52 * (1 - progress)}`}
             className="transition-all duration-1000 ease-linear"
           />
         </svg>
@@ -186,9 +182,9 @@ export default function RecordPage() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.8, opacity: 0 }}
                 onClick={handleStart}
-                className="w-20 h-20 rounded-full bg-echo-accent flex items-center justify-center shadow-lg shadow-echo-accent/30 hover:bg-echo-accent/90 transition-colors active:scale-95"
+                className="w-16 h-16 rounded-full bg-echo-accent flex items-center justify-center shadow-lg shadow-echo-accent/30 hover:bg-echo-accent/90 transition-colors active:scale-95"
               >
-                <Mic size={28} className="text-white" />
+                <Mic size={24} className="text-white" />
               </motion.button>
             )}
 
@@ -199,9 +195,9 @@ export default function RecordPage() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.8, opacity: 0 }}
                 onClick={stopRecording}
-                className="w-20 h-20 rounded-full bg-echo-red recording-pulse flex items-center justify-center active:scale-95"
+                className="w-16 h-16 rounded-full bg-echo-red recording-pulse flex items-center justify-center active:scale-95"
               >
-                <Square size={22} className="text-white" fill="white" />
+                <Square size={18} className="text-white" fill="white" />
               </motion.button>
             )}
 
@@ -215,10 +211,31 @@ export default function RecordPage() {
                 <div className="w-12 h-12 border-2 border-echo-accent border-t-transparent rounded-full animate-spin" />
               </motion.div>
             )}
+
+            {state === 'done' && (
+              <motion.div
+                key="done"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="w-16 h-16 rounded-full bg-echo-green/20 flex items-center justify-center"
+              >
+                <Check size={24} className="text-echo-green" />
+              </motion.div>
+            )}
+
+            {state === 'error' && (
+              <motion.div
+                key="error"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="w-16 h-16 rounded-full bg-echo-red/20 flex items-center justify-center"
+              >
+                <span className="text-echo-red text-2xl">!</span>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
       </div>
-      )}
 
       {/* Timer text */}
       {(state === 'recording' || state === 'idle') && (
@@ -247,7 +264,7 @@ export default function RecordPage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="w-full mt-4 space-y-4 overflow-y-auto flex-1"
+          className="w-full mt-6 space-y-4"
         >
           {/* Transcript */}
           <div className="p-4 bg-echo-surface border border-echo-border rounded-xl">
