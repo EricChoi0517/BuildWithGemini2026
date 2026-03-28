@@ -61,7 +61,9 @@ export default function LoginPage() {
               <line x1="12" x2="12" y1="19" y2="22" />
             </svg>
           </div>
-          <h1 className="font-display text-3xl text-echo-text text-center">Echo Journal</h1>
+          <h1 className="font-pageTitle font-bold text-4xl md:text-5xl text-echo-text text-center tracking-tight">
+            Echo Journal
+          </h1>
           <p className="text-echo-text-muted text-sm mt-2">
             30 seconds. Your voice. Your story.
           </p>

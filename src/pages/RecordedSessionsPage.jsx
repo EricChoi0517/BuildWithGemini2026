@@ -82,7 +82,7 @@ export default function RecordedSessionsPage() {
     <div className="pt-4 md:pt-2 pb-8 space-y-6">
       <header className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl md:text-3xl text-echo-text flex items-center gap-2">
+          <h1 className="font-pageTitle font-semibold text-3xl md:text-4xl text-echo-text flex items-center gap-2 tracking-tight">
             <ListMusic className="w-7 h-7 text-echo-accent shrink-0 md:w-8 md:h-8" strokeWidth={1.75} />
             Recorded sessions
           </h1>

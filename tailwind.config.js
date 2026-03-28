@@ -22,6 +22,8 @@ export default {
       },
       fontFamily: {
         display: ['"DM Serif Display"', 'serif'],
+        /** Main screen titles (replaces serif display for calmer UI) */
+        pageTitle: ['"Plus Jakarta Sans"', '"DM Sans"', 'system-ui', 'sans-serif'],
         body: ['"DM Sans"', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'monospace'],
       },

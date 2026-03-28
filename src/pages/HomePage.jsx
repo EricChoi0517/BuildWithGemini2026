@@ -1,10 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mic, ChevronRight, Sparkles } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getEntries, getInsights, getProfile, markInsightRead } from '@/lib/supabase';
-import { getDayMoodSummary } from '@/lib/entriesHelpers';
+import {
+  getDayMoodSummary,
+  getDayEmotionAverage,
+  entriesForDay,
+  parseEmotionPercentages,
+} from '@/lib/entriesHelpers';
+import {
+  TREND_METRICS,
+  TREND_METRIC_STORAGE_KEY,
+  getTrendMetricById,
+} from '@/lib/trendMetrics';
+import TrendChart from '@/components/TrendChart';
 import { ensurePastWeekSummary } from '@/lib/weeklySummary';
 import MoodDot, { getMoodColor } from '@/components/MoodDot';
 import { format, subDays, startOfDay, differenceInHours } from 'date-fns';
@@ -15,6 +26,23 @@ export default function HomePage() {
   const [insights, setInsights] = useState([]);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [trendMetricId, setTrendMetricId] = useState(() => {
+    try {
+      const s = localStorage.getItem(TREND_METRIC_STORAGE_KEY);
+      if (s && TREND_METRICS.some((m) => m.id === s)) return s;
+    } catch {
+      /* ignore */
+    }
+    return 'sentiment';
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(TREND_METRIC_STORAGE_KEY, trendMetricId);
+    } catch {
+      /* ignore */
+    }
+  }, [trendMetricId]);
 
   useEffect(() => {
     if (!user) return;
@@ -43,18 +71,44 @@ export default function HomePage() {
 
   const displayName = profile?.display_name || user?.email?.split('@')[0] || '';
   const greeting = getGreeting();
+  const activeTrendMetric = getTrendMetricById(trendMetricId);
 
-  // Build 30-day mood grid — same logic as calendar: average mood per day when multiple sessions exist
-  const today = startOfDay(new Date());
-  const moodDays = Array.from({ length: 30 }, (_, i) => {
-    const date = subDays(today, 29 - i);
-    const summary = getDayMoodSummary(entries, date);
-    return {
-      date,
-      score: summary?.avgSentiment ?? null,
-      hasEntry: summary != null && summary.count > 0,
-    };
-  });
+  const moodDays = useMemo(() => {
+    const today = startOfDay(new Date());
+    return Array.from({ length: 30 }, (_, i) => {
+      const date = subDays(today, 29 - i);
+      const summary = getDayMoodSummary(entries, date);
+      return {
+        date,
+        score: summary?.avgSentiment ?? null,
+        hasEntry: summary != null && summary.count > 0,
+      };
+    });
+  }, [entries]);
+
+  const trendSeries = useMemo(() => {
+    const today = startOfDay(new Date());
+    return Array.from({ length: 30 }, (_, i) => {
+      const date = subDays(today, 29 - i);
+      let value = null;
+      if (activeTrendMetric.yKind === 'sentiment') {
+        const s = getDayMoodSummary(entries, date);
+        value = s?.avgSentiment ?? null;
+      } else {
+        value = getDayEmotionAverage(entries, date, activeTrendMetric.emotionKey);
+      }
+      return {
+        date,
+        value,
+        hasEntry: entriesForDay(entries, date).length > 0,
+      };
+    });
+  }, [entries, activeTrendMetric]);
+
+  const entriesWithEmotionBreakdown = useMemo(
+    () => entries.filter((e) => parseEmotionPercentages(e) != null).length,
+    [entries]
+  );
 
   const lastEntry = entries[0];
   const showWelcomeBack =
@@ -70,6 +124,7 @@ export default function HomePage() {
   }
 
   const scoreDaysCount = moodDays.filter((d) => d.score !== null).length;
+  const trendFilledDays = trendSeries.filter((d) => d.value !== null).length;
   const entriesWithMoodScore = entries.filter(
     (e) => typeof e.sentiment_score === 'number' && !Number.isNaN(e.sentiment_score)
   ).length;
@@ -91,7 +146,7 @@ export default function HomePage() {
         transition={{ duration: 0.5 }}
         className="text-center max-w-2xl mx-auto space-y-2 px-1"
       >
-        <h1 className="font-display text-2xl md:text-3xl text-echo-text">
+        <h1 className="font-pageTitle font-semibold text-3xl md:text-4xl text-echo-text tracking-tight">
           {greeting} {displayName}!
         </h1>
         <p className="text-echo-text-dim text-sm leading-relaxed">
@@ -107,25 +162,51 @@ export default function HomePage() {
           transition={{ delay: 0.1 }}
           className="space-y-4"
         >
-          <h2 className="text-echo-text-muted text-xs font-medium uppercase tracking-wider text-center">
-            Mood Trend
-          </h2>
-          <div className="bg-echo-surface border border-echo-border rounded-2xl p-4 md:p-5 shadow-sm overflow-hidden min-h-[120px] md:min-h-[140px] flex flex-col justify-center">
-            {scoreDaysCount >= 3 ? (
-              <SentimentGraph data={moodDays} />
+          <div className="flex flex-col items-center gap-3 md:flex-row md:items-end md:justify-between md:gap-4 max-w-xl mx-auto w-full px-1">
+            <h2 className="font-pageTitle font-semibold text-sm md:text-base text-echo-text-muted uppercase tracking-wider text-center md:text-left shrink-0">
+              Trend
+            </h2>
+            <div className="w-full max-w-[280px] md:max-w-xs">
+              <label htmlFor="home-trend-metric" className="sr-only">
+                What to plot on the chart
+              </label>
+              <select
+                id="home-trend-metric"
+                value={trendMetricId}
+                onChange={(e) => setTrendMetricId(e.target.value)}
+                className="w-full text-sm bg-echo-card border border-echo-border rounded-xl px-3 py-2.5 text-echo-text focus:outline-none focus:ring-2 focus:ring-echo-accent/30"
+              >
+                {TREND_METRICS.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-echo-text-dim text-[10px] mt-1.5 leading-snug text-center md:text-right">
+                {activeTrendMetric.description}
+              </p>
+            </div>
+          </div>
+          <div className="bg-echo-surface border border-echo-border rounded-2xl p-3 md:p-4 shadow-sm overflow-x-auto min-h-[140px] md:min-h-[180px] flex flex-col justify-center">
+            {trendFilledDays >= 3 ? (
+              <TrendChart series={trendSeries} metric={activeTrendMetric} />
             ) : (
               <div className="text-center py-4 space-y-3">
                 <p className="text-echo-text-muted text-xs font-medium italic max-w-md mx-auto">
-                  {entries.length > 0 && entriesWithMoodScore === 0
-                    ? 'Your saved entries don’t have mood scores yet (often older data). New recordings get scored automatically—keep journaling.'
-                    : scoreDaysCount === 0 && entries.length >= 3
-                      ? 'Spread a few recordings across different days so we can chart mood over time.'
-                      : `Need mood scores on ${3 - scoreDaysCount} more calendar day${3 - scoreDaysCount === 1 ? '' : 's'} (last 30 days) to unlock the line chart.`}
+                  {activeTrendMetric.yKind === 'sentiment'
+                    ? entries.length > 0 && entriesWithMoodScore === 0
+                      ? 'Your saved entries don’t have mood scores yet (often older data). New recordings get scored automatically—keep journaling.'
+                      : trendFilledDays === 0 && entries.length >= 3
+                        ? 'Spread a few recordings across different days so we can chart mood over time.'
+                        : `Need mood scores on ${3 - trendFilledDays} more calendar day${3 - trendFilledDays === 1 ? '' : 's'} (last 30 days) to unlock the chart.`
+                    : entriesWithEmotionBreakdown === 0
+                      ? 'No emotion breakdown in your entries yet. New recordings include estimated percentages (fear, anger, happiness, …)—journal again to chart them.'
+                      : `Need this measure on ${3 - trendFilledDays} more calendar day${3 - trendFilledDays === 1 ? '' : 's'} in the last 30 days.`}
                 </p>
                 <div className="max-w-[120px] mx-auto h-1 bg-echo-border/30 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-echo-accent transition-all duration-1000"
-                    style={{ width: `${Math.min(100, (scoreDaysCount / 3) * 100)}%` }}
+                    style={{ width: `${Math.min(100, (trendFilledDays / 3) * 100)}%` }}
                   />
                 </div>
               </div>
@@ -344,82 +425,4 @@ function getGreeting() {
   if (hour < 12) return 'Good morning,';
   if (hour < 17) return 'Good afternoon,';
   return 'Good evening,';
-}
-
-function SentimentGraph({ data }) {
-  const width = 400;
-  const height = 100;
-  const padding = 10;
-  const graphWidth = width - padding * 2;
-  const graphHeight = height - padding * 2;
-
-  // Filter data to only include days with scores
-  const scoreDays = data
-    .map((d, i) => ({ ...d, index: i }))
-    .filter((d) => d.score !== null);
-
-  if (scoreDays.length < 2) {
-    return (
-      <div className="h-full flex items-center justify-center text-echo-text-dim text-xs py-4 italic">
-        Keep recording to see your mood trend.
-      </div>
-    );
-  }
-
-  // Linear scale to map to SVG coordinates
-  const getX = (i) => padding + (i / 29) * graphWidth;
-  const getY = (s) => padding + graphHeight - ((s + 1) / 2) * graphHeight;
-
-  // Build the SVG path
-  const pathData = scoreDays.reduce((acc, point, i) => {
-    const x = getX(point.index);
-    const y = getY(point.score);
-    return i === 0 ? `M ${x} ${y}` : `${acc} L ${x} ${y}`;
-  }, '');
-
-  return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      className="w-full overflow-visible"
-      style={{ filter: 'drop-shadow(0px 2px 4px rgba(107, 91, 158, 0.12))' }}
-    >
-      {/* Reference lines */}
-      <line x1={padding} y1={height / 2} x2={width - padding} y2={height / 2} stroke="currentColor" strokeWidth={1} className="text-echo-border opacity-50" strokeDasharray="4 4" />
-
-      {/* The main mood line */}
-      <path
-        d={pathData}
-        fill="none"
-        stroke="url(#mood-gradient)"
-        strokeWidth={3}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="transition-all duration-700"
-      />
-
-      {/* Points on the line */}
-      {scoreDays.slice(-10).map((point, i) => (
-        <circle
-          key={i}
-          cx={getX(point.index)}
-          cy={getY(point.score)}
-          r={3}
-          fill={getMoodColor(point.score)}
-          className="transition-all duration-300"
-        />
-      ))}
-
-      <defs>
-        <linearGradient id="mood-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          {scoreDays.map((point, i) => (
-            <stop
-              key={i}
-              offset={`${(point.index / 29) * 100}%`}
-              stopColor={getMoodColor(point.score)}
-            />
-          ))}
-        </linearGradient>
-      </defs>
-    </svg>
-  );
 }

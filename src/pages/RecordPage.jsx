@@ -78,7 +78,7 @@ export default function RecordPage() {
         animate={{ opacity: 1 }}
         className="text-center mb-4"
       >
-        <h1 className="font-display text-2xl text-echo-text text-center">
+        <h1 className="font-pageTitle font-semibold text-3xl md:text-4xl text-echo-text text-center tracking-tight">
           {state === 'idle' && 'Ready to record'}
           {state === 'recording' && 'Listening...'}
           {state === 'processing' && 'Processing...'}
