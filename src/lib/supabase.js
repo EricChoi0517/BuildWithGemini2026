@@ -67,6 +67,12 @@ export async function getEntryCount(userId) {
   return count;
 }
 
+export async function deleteEntry(userId, entryId) {
+  const { error } = await supabase.from('entries').delete().eq('id', entryId).eq('user_id', userId);
+
+  if (error) throw error;
+}
+
 // ---- Insight Operations ----
 
 export async function getInsights(userId, { unreadOnly = false, includeDismissed = false } = {}) {

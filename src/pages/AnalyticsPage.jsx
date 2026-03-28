@@ -104,7 +104,7 @@ export default function AnalyticsPage() {
 
   return (
     <div className="pt-8 pb-4 space-y-6">
-      <h1 className="font-display text-2xl text-echo-text">Analytics</h1>
+      <h1 className="font-display text-2xl text-echo-text text-center">Analytics</h1>
 
       {/* Tab switcher */}
       <div className="flex gap-1 bg-echo-surface rounded-xl p-1 border border-echo-border">
@@ -116,11 +116,10 @@ export default function AnalyticsPage() {
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-              tab === t.id
+            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${tab === t.id
                 ? 'bg-echo-accent text-white'
                 : 'text-echo-text-muted hover:text-echo-text'
-            }`}
+              }`}
           >
             {t.label}
           </button>
@@ -267,9 +266,8 @@ export default function AnalyticsPage() {
               return (
                 <div
                   key={insight.id}
-                  className={`p-4 bg-echo-surface border rounded-xl transition-all ${
-                    insight.is_read ? 'border-echo-border' : 'border-echo-accent/30'
-                  }`}
+                  className={`p-4 bg-echo-surface border rounded-xl transition-all ${insight.is_read ? 'border-echo-border' : 'border-echo-accent/30'
+                    }`}
                 >
                   <div className="flex items-start gap-3">
                     <div className="p-2 rounded-lg bg-echo-accent/10">

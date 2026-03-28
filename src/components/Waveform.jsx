@@ -50,7 +50,7 @@ export default function Waveform({ data, isRecording, className = '' }) {
 
     for (let i = 0; i < data.length; i++) {
       const v = data[i] / 128.0;
-      const y = (v * centerY);
+      const y = centerY + (v - 1) * centerY
       const x = i * sliceWidth;
 
       if (i === 0) {
