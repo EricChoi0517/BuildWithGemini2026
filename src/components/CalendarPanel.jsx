@@ -19,7 +19,8 @@ import {
   isToday,
 } from 'date-fns';
 
-export default function CalendarPage() {
+/** Month calendar with per-day average mood; used inside Analytics (and legacy redirect). */
+export default function CalendarPanel() {
   const { user } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [entries, setEntries] = useState([]);
@@ -59,28 +60,36 @@ export default function CalendarPage() {
     return '#A8A29E';
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="w-8 h-8 border-2 border-echo-accent border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <div className="pt-8 pb-4">
-      {/* Month Navigation */}
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
         <button
+          type="button"
           onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-          className="p-2 text-echo-text-muted hover:text-echo-text transition-colors"
+          className="p-2 text-echo-text-muted hover:text-echo-text transition-colors rounded-lg hover:bg-echo-surface"
         >
           <ChevronLeft size={20} />
         </button>
-        <h1 className="font-display text-xl text-echo-text text-center">
+        <h2 className="font-display text-lg md:text-xl text-echo-text text-center">
           {format(currentMonth, 'MMMM yyyy')}
-        </h1>
+        </h2>
         <button
+          type="button"
           onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-          className="p-2 text-echo-text-muted hover:text-echo-text transition-colors"
+          className="p-2 text-echo-text-muted hover:text-echo-text transition-colors rounded-lg hover:bg-echo-surface"
         >
           <ChevronRight size={20} />
         </button>
       </div>
 
-      {/* Day headers */}
       <div className="grid grid-cols-7 gap-1 mb-2">
         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
           <div key={i} className="text-center text-echo-text-dim text-xs font-medium py-1">
@@ -89,7 +98,6 @@ export default function CalendarPage() {
         ))}
       </div>
 
-      {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-1">
         {days.map((day, i) => {
           const summary = getDayMoodSummary(entries, day);
@@ -130,8 +138,7 @@ export default function CalendarPage() {
         })}
       </div>
 
-      {/* Entry count */}
-      <div className="mt-4 text-center">
+      <div className="text-center">
         <p className="text-echo-text-dim text-xs">
           {entries.length} {entries.length === 1 ? 'entry' : 'entries'} this month
         </p>

@@ -219,7 +219,7 @@ export default function HomePage() {
                       Sessions <ChevronRight size={12} />
                     </Link>
                     <Link
-                      to="/calendar"
+                      to="/analytics?tab=calendar"
                       className="text-echo-accent text-xs flex items-center gap-0.5 hover:underline"
                     >
                       Calendar <ChevronRight size={12} />

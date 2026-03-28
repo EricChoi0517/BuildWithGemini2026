@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Sparkles, Users, TrendingUp, MessageCircle, Clock, Repeat } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import CalendarPanel from '@/components/CalendarPanel';
 import { getEntries, getInsights, getWeeklySummaries } from '@/lib/supabase';
 import { ensurePastWeekSummary } from '@/lib/weeklySummary';
 import MoodDot, { getMoodColor } from '@/components/MoodDot';
@@ -18,13 +20,41 @@ const INSIGHT_ICONS = {
   recurring_trend: Repeat,
 };
 
+const ANALYTICS_TABS = ['overview', 'calendar', 'insights', 'weekly'];
+
 export default function AnalyticsPage() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [entries, setEntries] = useState([]);
   const [insights, setInsights] = useState([]);
   const [summaries, setSummaries] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState('overview'); // overview | insights | weekly
+
+  const tabParam = searchParams.get('tab');
+  const [tab, setTab] = useState(() => {
+    const p = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tab') : null;
+    return ANALYTICS_TABS.includes(p) ? p : 'overview';
+  });
+
+  useEffect(() => {
+    if (ANALYTICS_TABS.includes(tabParam)) {
+      setTab(tabParam);
+    } else {
+      setTab('overview');
+    }
+  }, [tabParam]);
+
+  const setTabAndUrl = useCallback(
+    (next) => {
+      setTab(next);
+      if (next === 'overview') {
+        setSearchParams({}, { replace: true });
+      } else {
+        setSearchParams({ tab: next }, { replace: true });
+      }
+    },
+    [setSearchParams]
+  );
 
   useEffect(() => {
     if (!user) return;
@@ -107,16 +137,18 @@ export default function AnalyticsPage() {
       <h1 className="font-display text-2xl text-echo-text text-center">Analytics</h1>
 
       {/* Tab switcher */}
-      <div className="flex gap-1 bg-echo-surface rounded-xl p-1 border border-echo-border">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 bg-echo-surface rounded-xl p-1 border border-echo-border">
         {[
           { id: 'overview', label: 'Overview' },
+          { id: 'calendar', label: 'Calendar' },
           { id: 'insights', label: 'Insights' },
           { id: 'weekly', label: 'Weekly' },
         ].map((t) => (
           <button
             key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${tab === t.id
+            type="button"
+            onClick={() => setTabAndUrl(t.id)}
+            className={`py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${tab === t.id
                 ? 'bg-echo-accent text-white'
                 : 'text-echo-text-muted hover:text-echo-text'
               }`}
@@ -126,8 +158,8 @@ export default function AnalyticsPage() {
         ))}
       </div>
 
-      {/* No data state */}
-      {totalEntries < 3 && (
+      {/* No data state — overview only; calendar/weekly still useful with fewer entries */}
+      {totalEntries < 3 && tab === 'overview' && (
         <div className="text-center py-8">
           <p className="text-echo-text-muted text-sm">
             Record at least 3 entries to unlock insights.
@@ -136,6 +168,17 @@ export default function AnalyticsPage() {
             {totalEntries}/3 entries recorded
           </p>
         </div>
+      )}
+
+      {/* Calendar Tab */}
+      {tab === 'calendar' && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="p-4 md:p-5 bg-echo-surface border border-echo-border rounded-2xl shadow-sm"
+        >
+          <CalendarPanel />
+        </motion.div>
       )}
 
       {/* Overview Tab */}

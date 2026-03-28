@@ -91,7 +91,7 @@ export default function RecordedSessionsPage() {
           </p>
         </div>
         <Link
-          to="/calendar"
+          to="/analytics?tab=calendar"
           className="text-sm text-echo-accent font-medium hover:underline shrink-0"
         >
           Back to calendar

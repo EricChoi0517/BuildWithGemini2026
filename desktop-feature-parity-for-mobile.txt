@@ -15,18 +15,18 @@ Public:
 
 Protected (inside Layout: sidebar on md+, bottom nav on small screens):
   /               — Home
-  /calendar       — Month calendar
+  /calendar       — Redirects to /analytics?tab=calendar (bookmark-safe)
   /sessions       — Recorded sessions (transcripts, delete)
   /record         — Voice (and optional webcam) recording
-  /analytics      — Analytics
+  /analytics      — Analytics (tabs: Overview, Calendar, Insights, Weekly)
   /settings       — Account (display name, recording toggles, privacy blurb,
                     change password, sign out). Nav label is "Account".
 
 ----------------------------------------------------------------------
 NAVIGATION (src/components/navConfig.js, Sidebar.jsx, BottomNav.jsx)
 ----------------------------------------------------------------------
-Order (non-primary items): Home, Calendar, Sessions, Record, Analytics, Account
-- "Record" is the primary FAB-style item in bottom nav (center).
+Order: Home, Sessions, Record (center FAB), Analytics, Account — five slots on a
+  grid so Record stays visually centered. Calendar lives under Analytics → Calendar tab.
 - Sessions uses ListMusic icon; Account uses User icon (not "Settings" label).
 - Desktop: left sidebar (hidden below md).
 - Mobile: bottom nav (hidden md and up) with safe-area padding variable.
@@ -50,12 +50,12 @@ HOME (src/pages/HomePage.jsx)
   area beside a sidebar for primary content.
 - Mood Trend card (graph or progress toward 3 scored days).
 - Last 30 days: row of MoodDot, centered in card.
-- Recent entries: stacked under 30-day row; links to /sessions and /calendar.
+- Recent entries: stacked under 30-day row; links to /sessions and /analytics?tab=calendar.
 - New Insights section below main column when insights exist.
 - Empty state: CTA to record; on lg+, "Getting started" card centered.
 
 ----------------------------------------------------------------------
-CALENDAR (src/pages/CalendarPage.jsx)
+CALENDAR (src/components/CalendarPanel.jsx — Analytics → Calendar tab)
 ----------------------------------------------------------------------
 - Day dot = average sentiment_score across ALL sessions that calendar day
   (see src/lib/entriesHelpers.js: getDayMoodSummary, entriesForDay).
@@ -71,7 +71,7 @@ RECORDED SESSIONS (src/pages/RecordedSessionsPage.jsx)
 - Expand row for full transcript.
 - Delete with confirmation → deleteEntry(userId, entryId) in src/lib/supabase.js.
 - ?date=YYYY-MM-DD filters to that calendar day; "Clear filter" clears query.
-- Link back to calendar in header.
+- Link back to calendar in header → /analytics?tab=calendar.
 
 ----------------------------------------------------------------------
 AUTH (src/context/AuthContext.jsx, LoginPage, Settings/Account)
@@ -104,7 +104,8 @@ MOBILE-SPECIFIC CHECKLIST (behavior parity + polish)
 FILES OF INTEREST
 ----------------------------------------------------------------------
 src/pages/HomePage.jsx
-src/pages/CalendarPage.jsx
+src/pages/AnalyticsPage.jsx
+src/components/CalendarPanel.jsx
 src/pages/RecordedSessionsPage.jsx
 src/pages/LoginPage.jsx
 src/pages/SettingsPage.jsx
