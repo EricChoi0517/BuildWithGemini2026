@@ -71,7 +71,7 @@ export default function SettingsPage() {
 
   return (
     <div className="pt-8 pb-4 space-y-6">
-      <h1 className="font-display text-2xl text-echo-text">Settings</h1>
+      <h1 className="font-display text-2xl text-echo-text text-center">Settings</h1>
 
       {/* Profile */}
       <motion.div
@@ -197,9 +197,8 @@ function SettingRow({ icon: Icon, label, toggle, value, onChange }) {
       </div>
       {toggle ? (
         <div
-          className={`w-10 h-6 rounded-full transition-colors duration-200 flex items-center ${
-            value ? 'bg-echo-accent justify-end' : 'bg-echo-border justify-start'
-          }`}
+          className={`w-10 h-6 rounded-full transition-colors duration-200 flex items-center ${value ? 'bg-echo-accent justify-end' : 'bg-echo-border justify-start'
+            }`}
         >
           <div className="w-5 h-5 rounded-full bg-white mx-0.5 shadow-sm transition-all" />
         </div>

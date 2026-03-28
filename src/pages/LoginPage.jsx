@@ -52,7 +52,7 @@ export default function LoginPage() {
               <line x1="12" x2="12" y1="19" y2="22" />
             </svg>
           </div>
-          <h1 className="font-display text-3xl text-echo-text">Echo Journal</h1>
+          <h1 className="font-display text-3xl text-echo-text text-center">Echo Journal</h1>
           <p className="text-echo-text-muted text-sm mt-2">
             30 seconds. Your voice. Your story.
           </p>
@@ -65,8 +65,8 @@ export default function LoginPage() {
               key={m}
               onClick={() => { setMode(m); setError(''); }}
               className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${mode === m
-                  ? 'bg-echo-accent text-white shadow-lg shadow-echo-accent/20'
-                  : 'text-echo-text-muted hover:text-echo-text'
+                ? 'bg-echo-accent text-white shadow-lg shadow-echo-accent/20'
+                : 'text-echo-text-muted hover:text-echo-text'
                 }`}
             >
               {m === 'login' ? 'Log In' : 'Sign Up'}
