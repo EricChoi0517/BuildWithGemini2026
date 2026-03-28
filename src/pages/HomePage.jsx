@@ -87,8 +87,9 @@ export default function HomePage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <p className="text-echo-text-muted text-sm">{greeting}</p>
-        <h1 className="font-display text-2xl text-echo-text mt-1">{displayName}</h1>
+        <h1 className="font-display text-3xl text-echo-text text-center">
+          {greeting} {displayName}!
+        </h1>
       </motion.div>
 
       {/* Mood Trend — Always Visible */}

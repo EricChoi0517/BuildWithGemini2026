@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { LogOut, Shield, Clock, Bell, ChevronRight, User } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getProfile, updateSettings, updateProfile } from '@/lib/supabase';
 
 export default function SettingsPage() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, updatePassword } = useAuth();
   const [profile, setProfile] = useState(null);
   const [settings, setSettings] = useState({
     recording_duration: 30,
@@ -16,6 +16,14 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [displayNameDraft, setDisplayNameDraft] = useState('');
   const [nameSaving, setNameSaving] = useState(false);
+
+  // Password change states
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
 
   useEffect(() => {
     if (!user) return;
@@ -46,6 +54,35 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleUpdatePassword(e) {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError('Passwords do not match');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+      return;
+    }
+
+    setPasswordSaving(true);
+    try {
+      await updatePassword(newPassword);
+      setPasswordSuccess('Password updated successfully!');
+      setNewPassword('');
+      setConfirmNewPassword('');
+      setTimeout(() => setShowPasswordForm(false), 2000);
+    } catch (err) {
+      setPasswordError(err.message || 'Failed to update password');
+    } finally {
+      setPasswordSaving(false);
+    }
+  }
+
   async function handleToggle(key) {
     const prev = { ...settings };
     const updated = { ...prev, [key]: !prev[key] };
@@ -71,7 +108,7 @@ export default function SettingsPage() {
 
   return (
     <div className="pt-8 pb-4 space-y-6">
-      <h1 className="font-display text-2xl text-echo-text">Settings</h1>
+      <h1 className="font-display text-2xl text-echo-text text-center">Settings</h1>
 
       {/* Profile */}
       <motion.div
@@ -158,7 +195,7 @@ export default function SettingsPage() {
         </div>
       </motion.div>
 
-      {/* Danger zone */}
+      {/* Account actions */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -168,6 +205,70 @@ export default function SettingsPage() {
         <p className="text-echo-text-dim text-xs uppercase tracking-wider px-1">
           Account
         </p>
+
+        <div className="bg-echo-surface border border-echo-border rounded-xl overflow-hidden">
+          <button
+            onClick={() => setShowPasswordForm(!showPasswordForm)}
+            className="w-full p-4 flex items-center justify-between text-echo-text hover:bg-echo-accent/5 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Shield size={18} className="text-echo-text-muted" />
+              <span className="text-sm font-medium">Change Password</span>
+            </div>
+            <ChevronRight
+              size={16}
+              className={`text-echo-text-dim transition-transform duration-200 ${showPasswordForm ? 'rotate-90' : ''}`}
+            />
+          </button>
+
+          <AnimatePresence>
+            {showPasswordForm && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="px-4 pb-4 border-t border-echo-border"
+              >
+                <form onSubmit={handleUpdatePassword} className="pt-4 space-y-3">
+                  <input
+                    type="password"
+                    placeholder="New password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full bg-echo-card border border-echo-border rounded-lg px-3 py-2 text-echo-text text-sm placeholder:text-echo-text-dim focus:outline-none focus:ring-1 focus:ring-echo-accent"
+                    required
+                    minLength={6}
+                  />
+                  <input
+                    type="password"
+                    placeholder="Confirm new password"
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    className="w-full bg-echo-card border border-echo-border rounded-lg px-3 py-2 text-echo-text text-sm placeholder:text-echo-text-dim focus:outline-none focus:ring-1 focus:ring-echo-accent"
+                    required
+                    minLength={6}
+                  />
+
+                  {passwordError && (
+                    <p className="text-echo-red text-xs text-center">{passwordError}</p>
+                  )}
+                  {passwordSuccess && (
+                    <p className="text-echo-accent text-xs text-center">{passwordSuccess}</p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={passwordSaving}
+                    className="w-full py-2 rounded-lg text-sm font-medium bg-echo-accent text-white disabled:opacity-50"
+                  >
+                    {passwordSaving ? 'Updating...' : 'Update Password'}
+                  </button>
+                </form>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
         <button
           onClick={handleSignOut}
           className="w-full p-4 bg-echo-surface border border-echo-border rounded-xl flex items-center gap-3 text-echo-red hover:bg-echo-red/5 transition-colors"
@@ -197,9 +298,8 @@ function SettingRow({ icon: Icon, label, toggle, value, onChange }) {
       </div>
       {toggle ? (
         <div
-          className={`w-10 h-6 rounded-full transition-colors duration-200 flex items-center ${
-            value ? 'bg-echo-accent justify-end' : 'bg-echo-border justify-start'
-          }`}
+          className={`w-10 h-6 rounded-full transition-colors duration-200 flex items-center ${value ? 'bg-echo-accent justify-end' : 'bg-echo-border justify-start'
+            }`}
         >
           <div className="w-5 h-5 rounded-full bg-white mx-0.5 shadow-sm transition-all" />
         </div>
