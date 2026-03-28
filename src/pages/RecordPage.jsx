@@ -142,15 +142,18 @@ export default function RecordPage() {
         </motion.div>
       )}
 
-      {/* Waveform */}
-      <div className="w-full mb-8">
-        <Waveform
-          data={waveformData}
-          isRecording={state === 'recording'}
-        />
-      </div>
+      {/* Waveform — hidden once entry is saved */}
+      {state !== 'done' && state !== 'error' && (
+        <div className="w-full mb-8">
+          <Waveform
+            data={waveformData}
+            isRecording={state === 'recording'}
+          />
+        </div>
+      )}
 
-      {/* Timer Ring */}
+      {/* Timer Ring — hidden once entry is saved */}
+      {state !== 'done' && state !== 'error' && (
       <div className="relative mb-8">
         <svg width="160" height="160" viewBox="0 0 160 160" className="-rotate-90">
           {/* Background ring */}
@@ -212,31 +215,10 @@ export default function RecordPage() {
                 <div className="w-12 h-12 border-2 border-echo-accent border-t-transparent rounded-full animate-spin" />
               </motion.div>
             )}
-
-            {state === 'done' && (
-              <motion.div
-                key="done"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="w-20 h-20 rounded-full bg-echo-green/20 flex items-center justify-center"
-              >
-                <Check size={28} className="text-echo-green" />
-              </motion.div>
-            )}
-
-            {state === 'error' && (
-              <motion.div
-                key="error"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="w-20 h-20 rounded-full bg-echo-red/20 flex items-center justify-center"
-              >
-                <span className="text-echo-red text-2xl">!</span>
-              </motion.div>
-            )}
           </AnimatePresence>
         </div>
       </div>
+      )}
 
       {/* Timer text */}
       {(state === 'recording' || state === 'idle') && (
@@ -265,7 +247,7 @@ export default function RecordPage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="w-full mt-6 space-y-4 max-h-[calc(100vh-22rem)] overflow-y-auto pr-1"
+          className="w-full mt-4 space-y-4 overflow-y-auto flex-1"
         >
           {/* Transcript */}
           <div className="p-4 bg-echo-surface border border-echo-border rounded-xl">
