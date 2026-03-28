@@ -50,6 +50,7 @@ export default function HomePage() {
     };
   });
 
+  const scoreDaysCount = moodDays.filter(d => d.score !== null).length;
   const recentEntries = entries.slice(0, 5);
 
   if (loading) {
@@ -72,12 +73,41 @@ export default function HomePage() {
         <h1 className="font-display text-2xl text-echo-text mt-1">{displayName}</h1>
       </motion.div>
 
+      {/* Mood Trend — Always Visible */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="space-y-4"
+      >
+        <h2 className="text-echo-text-muted text-xs font-medium uppercase tracking-wider">
+          Mood Trend
+        </h2>
+        <div className="bg-echo-surface border border-echo-border rounded-2xl p-4 overflow-hidden min-h-[120px] flex flex-col justify-center">
+          {scoreDaysCount >= 3 ? (
+            <SentimentGraph data={moodDays} />
+          ) : (
+            <div className="text-center py-4 space-y-3">
+              <p className="text-echo-text-muted text-xs font-medium italic">
+                Record {3 - scoreDaysCount} more {3 - scoreDaysCount === 1 ? 'entry' : 'entries'} to unlock your trend.
+              </p>
+              <div className="max-w-[120px] mx-auto h-1 bg-echo-border/30 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-echo-accent transition-all duration-1000"
+                  style={{ width: `${(scoreDaysCount / 3) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </motion.div>
+
       {/* Empty State / Welcome */}
       {entries.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0.15 }}
           className="space-y-8"
         >
           <div className="p-8 bg-gradient-to-br from-echo-accent/10 via-echo-surface to-echo-surface border border-echo-accent/20 rounded-3xl text-center space-y-6">
@@ -110,38 +140,25 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 px-2">
+          <div className="grid grid-cols-3 gap-3 px-2">
             {[
-              { label: 'Private', icon: '🔒' },
-              { label: 'Biometric', icon: '🧘' },
-              { label: 'Insightful', icon: '✨' }
+              { label: 'Calm' },
+              { label: 'Aware' },
+              { label: 'Grounded' }
             ].map((feature, i) => (
-              <div key={i} className="text-center space-y-1">
-                <div className="text-xl">{feature.icon}</div>
-                <p className="text-[10px] text-echo-text-dim font-medium uppercase tracking-tighter">{feature.label}</p>
+              <div key={i} className="text-center py-2 bg-echo-surface/30 rounded-lg border border-echo-border/30">
+                <p className="text-[10px] text-echo-text-dim font-medium uppercase tracking-[0.2em]">{feature.label}</p>
               </div>
             ))}
           </div>
         </motion.div>
-      ) : null}
-
-      {/* Mood Timeline — 30 days */}
-      {entries.length > 0 && (
+      ) : (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
           className="space-y-8"
         >
-          <div className="space-y-4">
-            <h2 className="text-echo-text-muted text-xs font-medium uppercase tracking-wider">
-              Mood Trend
-            </h2>
-            <div className="bg-echo-surface border border-echo-border rounded-2xl p-4 overflow-hidden">
-              <SentimentGraph data={moodDays} />
-            </div>
-          </div>
-
           <div className="space-y-3">
             <h2 className="text-echo-text-muted text-xs font-medium uppercase tracking-wider">
               Last 30 days
