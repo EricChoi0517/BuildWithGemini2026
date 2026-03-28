@@ -19,6 +19,7 @@ body,
 #root {
   height: 100%;
   overscroll-behavior: none;
+  background-color: #F8F8FC;
 }
 
 body {

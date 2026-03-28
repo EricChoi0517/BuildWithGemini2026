@@ -1,30 +1,11 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import {
-  Sparkles,
-  Users,
-  TrendingUp,
-  MessageCircle,
-  Clock,
-  Repeat,
-  Check,
-  X,
-  RefreshCw,
-} from 'lucide-react';
+import { Sparkles, Users, TrendingUp, MessageCircle, Clock, Repeat } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import CalendarPanel from '@/components/CalendarPanel';
-import {
-  getEntries,
-  getInsights,
-  getWeeklySummaries,
-  markInsightRead,
-  dismissInsight,
-} from '@/lib/supabase';
+import { getEntries, getInsights, getWeeklySummaries } from '@/lib/supabase';
 import { ensurePastWeekSummary } from '@/lib/weeklySummary';
-import { runPostEntryHeuristics } from '@/lib/insights';
 import MoodDot, { getMoodColor } from '@/components/MoodDot';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 
 const INSIGHT_ICONS = {
   emotional_pattern: TrendingUp,
@@ -37,63 +18,17 @@ const INSIGHT_ICONS = {
   recurring_trend: Repeat,
 };
 
-const ANALYTICS_TABS = ['overview', 'calendar', 'insights', 'weekly'];
-
-const INSIGHT_TYPE_LABELS = {
-  emotional_pattern: 'Mood pattern',
-  relationship_map: 'Relationships',
-  energy_correlation: 'Energy',
-  unresolved_thread: 'Open thread',
-  vocabulary_drift: 'Language shift',
-  memory_anchor: 'Memory',
-  this_time_last_month: 'This time last month',
-  recurring_trend: 'Recurring theme',
-};
-
-function insightTypeLabel(type) {
-  if (!type) return 'Insight';
-  return INSIGHT_TYPE_LABELS[type] || type.replace(/_/g, ' ');
-}
-
 export default function AnalyticsPage() {
   const { user } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [entries, setEntries] = useState([]);
   const [insights, setInsights] = useState([]);
   const [summaries, setSummaries] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [insightsBusy, setInsightsBusy] = useState(false);
-
-  const tabParam = searchParams.get('tab');
-  const [tab, setTab] = useState(() => {
-    const p = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tab') : null;
-    return ANALYTICS_TABS.includes(p) ? p : 'overview';
-  });
+  const [tab, setTab] = useState('overview'); // overview | insights | weekly
 
   useEffect(() => {
-    if (ANALYTICS_TABS.includes(tabParam)) {
-      setTab(tabParam);
-    } else {
-      setTab('overview');
-    }
-  }, [tabParam]);
-
-  const setTabAndUrl = useCallback(
-    (next) => {
-      setTab(next);
-      if (next === 'overview') {
-        setSearchParams({}, { replace: true });
-      } else {
-        setSearchParams({ tab: next }, { replace: true });
-      }
-    },
-    [setSearchParams]
-  );
-
-  const loadData = useCallback(
-    async ({ silent } = {}) => {
-      if (!user) return;
-      if (!silent) setLoading(true);
+    if (!user) return;
+    async function load() {
       try {
         const [e, i] = await Promise.all([
           getEntries(user.id, { limit: 60 }),
@@ -109,58 +44,11 @@ export default function AnalyticsPage() {
       } catch (err) {
         console.error('Failed to load analytics:', err);
       } finally {
-        if (!silent) setLoading(false);
+        setLoading(false);
       }
-    },
-    [user]
-  );
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  const unreadInsightCount = useMemo(
-    () => insights.filter((i) => !i.is_read).length,
-    [insights]
-  );
-
-  const insightsSorted = useMemo(() => {
-    return [...insights].sort((a, b) => {
-      if (a.is_read !== b.is_read) return a.is_read ? 1 : -1;
-      return new Date(b.created_at) - new Date(a.created_at);
-    });
-  }, [insights]);
-
-  async function handleMarkInsightRead(id) {
-    try {
-      await markInsightRead(id);
-      setInsights((prev) => prev.map((x) => (x.id === id ? { ...x, is_read: true } : x)));
-    } catch (err) {
-      console.error('Failed to mark insight read:', err);
     }
-  }
-
-  async function handleDismissInsight(id) {
-    try {
-      await dismissInsight(id);
-      setInsights((prev) => prev.filter((x) => x.id !== id));
-    } catch (err) {
-      console.error('Failed to dismiss insight:', err);
-    }
-  }
-
-  async function handleRefreshInsights() {
-    if (!user || insightsBusy) return;
-    setInsightsBusy(true);
-    try {
-      await runPostEntryHeuristics(user.id);
-      await loadData({ silent: true });
-    } catch (err) {
-      console.error('Insight refresh failed:', err);
-    } finally {
-      setInsightsBusy(false);
-    }
-  }
+    load();
+  }, [user]);
 
   if (loading) {
     return (
@@ -182,10 +70,7 @@ export default function AnalyticsPage() {
   const allEntities = entries.flatMap((e) => e.entities || []);
   const entityCounts = {};
   for (const entity of allEntities) {
-    // entities may be strings or objects like {name, type}
-    const name = typeof entity === 'string' ? entity : entity?.name;
-    if (!name || typeof name !== 'string' || name === '[object Object]') continue;
-    entityCounts[name] = (entityCounts[name] || 0) + 1;
+    entityCounts[entity] = (entityCounts[entity] || 0) + 1;
   }
   const topEntities = Object.entries(entityCounts)
     .sort((a, b) => b[1] - a[1])
@@ -212,49 +97,37 @@ export default function AnalyticsPage() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 12);
 
-  // Sentiment over time (last 14 entries)
-  const last14 = [...entries].reverse().slice(0, 14);
+  // Sentiment over time (last 14 days)
+  const last14 = entries
+    .filter((e) => new Date(e.created_at) > subDays(new Date(), 14))
+    .reverse();
 
   return (
     <div className="pt-8 pb-4 space-y-6">
       <h1 className="font-display text-2xl text-echo-text text-center">Analytics</h1>
 
       {/* Tab switcher */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 bg-echo-surface rounded-xl p-1 border border-echo-border">
+      <div className="flex gap-1 bg-echo-surface rounded-xl p-1 border border-echo-border">
         {[
           { id: 'overview', label: 'Overview' },
-          { id: 'calendar', label: 'Calendar' },
           { id: 'insights', label: 'Insights' },
           { id: 'weekly', label: 'Weekly' },
         ].map((t) => (
           <button
             key={t.id}
-            type="button"
-            onClick={() => setTabAndUrl(t.id)}
-            className={`relative py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${tab === t.id
+            onClick={() => setTab(t.id)}
+            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${tab === t.id
                 ? 'bg-echo-accent text-white'
                 : 'text-echo-text-muted hover:text-echo-text'
               }`}
           >
-            <span className="inline-flex items-center justify-center gap-1">
-              {t.label}
-              {t.id === 'insights' && unreadInsightCount > 0 && (
-                <span
-                  className={`min-w-[1.125rem] h-5 px-1 rounded-full text-[10px] font-semibold leading-none flex items-center justify-center ${
-                    tab === 'insights' ? 'bg-white/25 text-white' : 'bg-echo-accent text-white'
-                  }`}
-                  aria-label={`${unreadInsightCount} unread insights`}
-                >
-                  {unreadInsightCount > 9 ? '9+' : unreadInsightCount}
-                </span>
-              )}
-            </span>
+            {t.label}
           </button>
         ))}
       </div>
 
-      {/* No data state — overview only; calendar/weekly still useful with fewer entries */}
-      {totalEntries < 3 && tab === 'overview' && (
+      {/* No data state */}
+      {totalEntries < 3 && (
         <div className="text-center py-8">
           <p className="text-echo-text-muted text-sm">
             Record at least 3 entries to unlock insights.
@@ -263,17 +136,6 @@ export default function AnalyticsPage() {
             {totalEntries}/3 entries recorded
           </p>
         </div>
-      )}
-
-      {/* Calendar Tab */}
-      {tab === 'calendar' && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="p-4 md:p-5 bg-echo-surface border border-echo-border rounded-2xl shadow-sm"
-        >
-          <CalendarPanel />
-        </motion.div>
       )}
 
       {/* Overview Tab */}
@@ -302,7 +164,7 @@ export default function AnalyticsPage() {
           {last14.length > 0 && (
             <div className="p-4 bg-echo-surface border border-echo-border rounded-xl">
               <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-4">
-                Mood · Last 14 Entries
+                Mood · Last 14 Days
               </p>
               <div className="flex items-end gap-1 h-20">
                 {last14.map((entry, i) => {
@@ -389,125 +251,46 @@ export default function AnalyticsPage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="space-y-5"
+          className="space-y-3"
         >
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h2 className="font-display text-lg text-echo-text">Your insights</h2>
-              <p className="text-echo-text-muted text-xs mt-0.5 max-w-md">
-                Patterns we notice across your entries. Mark as read when you&apos;ve seen them, or dismiss if
-                they don&apos;t fit.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleRefreshInsights}
-              disabled={insightsBusy || !user}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border border-echo-border bg-echo-surface text-echo-text hover:bg-echo-card/80 transition-colors disabled:opacity-50 disabled:pointer-events-none shrink-0"
-            >
-              <RefreshCw size={16} className={insightsBusy ? 'animate-spin' : ''} />
-              {insightsBusy ? 'Checking…' : 'Check for new patterns'}
-            </button>
-          </div>
-
           {insights.length === 0 ? (
-            <div className="text-center py-12 px-4 rounded-2xl border border-dashed border-echo-border bg-echo-surface/50 space-y-3">
-              <Sparkles size={28} className="text-echo-accent/70 mx-auto" />
-              <p className="text-echo-text text-sm font-medium">No insights yet</p>
-              <p className="text-echo-text-muted text-sm max-w-sm mx-auto">
-                After several entries, we look for mood trends and recurring themes. Record a few more
-                check-ins, then tap <strong className="text-echo-text">Check for new patterns</strong> above.
+            <div className="text-center py-8">
+              <Sparkles size={24} className="text-echo-text-dim mx-auto mb-2" />
+              <p className="text-echo-text-muted text-sm">
+                No insights yet. Keep recording.
               </p>
-              <p className="text-echo-text-dim text-xs">
-                {totalEntries} {totalEntries === 1 ? 'entry' : 'entries'} on file
-              </p>
-              <Link
-                to="/record"
-                className="inline-block mt-2 text-echo-accent text-sm font-medium hover:underline"
-              >
-                Record now
-              </Link>
             </div>
           ) : (
-            <ul className="space-y-3">
-              {insightsSorted.map((insight) => {
-                const Icon = INSIGHT_ICONS[insight.type] || Sparkles;
-                const unread = !insight.is_read;
-                return (
-                  <li key={insight.id}>
-                    <div
-                      className={`rounded-xl border bg-echo-surface shadow-sm overflow-hidden transition-colors ${
-                        unread ? 'border-echo-accent/35 ring-1 ring-echo-accent/10' : 'border-echo-border'
-                      }`}
-                    >
-                      <div className="p-4 sm:p-5">
-                        <div className="flex items-start gap-3">
-                          <div
-                            className={`p-2.5 rounded-xl shrink-0 ${unread ? 'bg-echo-accent/15' : 'bg-echo-card'}`}
-                          >
-                            <Icon size={18} className="text-echo-accent" />
-                          </div>
-                          <div className="min-w-0 flex-1 space-y-2">
-                            <div className="flex flex-wrap items-center gap-2 gap-y-1">
-                              <span className="text-[10px] font-semibold uppercase tracking-wider text-echo-accent bg-echo-accent/10 px-2 py-0.5 rounded-md">
-                                {insightTypeLabel(insight.type)}
-                              </span>
-                              {unread && (
-                                <span className="text-[10px] font-medium text-echo-accent">New</span>
-                              )}
-                              <span className="text-[10px] text-echo-text-dim ml-auto sm:ml-0">
-                                {format(new Date(insight.created_at), 'MMM d, yyyy')}
-                              </span>
-                            </div>
-                            <h3 className="text-echo-text text-sm sm:text-base font-semibold leading-snug">
-                              {insight.title}
-                            </h3>
-                            <p className="text-echo-text-muted text-sm leading-relaxed whitespace-pre-wrap">
-                              {insight.body}
-                            </p>
-                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-echo-text-dim pt-1">
-                              {insight.entry_count != null && (
-                                <span>Based on {insight.entry_count} entries</span>
-                              )}
-                              {insight.confidence_score != null && (
-                                <span>
-                                  Confidence ~{(insight.confidence_score * 100).toFixed(0)}%
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-echo-border/80">
-                          {unread ? (
-                            <button
-                              type="button"
-                              onClick={() => handleMarkInsightRead(insight.id)}
-                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-echo-accent text-white hover:bg-echo-accent/90 transition-colors"
-                            >
-                              <Check size={14} />
-                              Mark as read
-                            </button>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-echo-text-dim border border-echo-border/60">
-                              <Check size={14} className="opacity-50" />
-                              Read
-                            </span>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => handleDismissInsight(insight.id)}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-echo-text-muted border border-echo-border hover:bg-echo-red/5 hover:text-echo-red hover:border-echo-red/25 transition-colors"
-                          >
-                            <X size={14} />
-                            Dismiss
-                          </button>
-                        </div>
-                      </div>
+            insights.map((insight) => {
+              const Icon = INSIGHT_ICONS[insight.type] || Sparkles;
+              return (
+                <div
+                  key={insight.id}
+                  className={`p-4 bg-echo-surface border rounded-xl transition-all ${insight.is_read ? 'border-echo-border' : 'border-echo-accent/30'
+                    }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-echo-accent/10">
+                      <Icon size={14} className="text-echo-accent" />
                     </div>
-                  </li>
-                );
-              })}
-            </ul>
+                    <div className="flex-1">
+                      <p className="text-echo-text text-sm font-medium">{insight.title}</p>
+                      <p className="text-echo-text-muted text-xs mt-1 leading-relaxed">
+                        {insight.body}
+                      </p>
+                      {insight.entry_count && (
+                        <p className="text-echo-text-dim text-[10px] mt-2">
+                          Noticed across {insight.entry_count} entries
+                          {insight.confidence_score
+                            ? ` · ${(insight.confidence_score * 100).toFixed(0)}% confidence`
+                            : ''}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
           )}
         </motion.div>
       )}

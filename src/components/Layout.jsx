@@ -1,16 +1,20 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import BottomNav from './BottomNav';
-import Sidebar from './Sidebar';
+
+const NO_SCROLL_ROUTES = ['/calendar'];
 
 export default function Layout() {
+  const { pathname } = useLocation();
+  const noScroll = NO_SCROLL_ROUTES.includes(pathname);
+
   return (
-    <div className="min-h-screen bg-echo-bg flex flex-col md:flex-row">
-      <Sidebar />
-      <div className="flex-1 min-w-0 flex flex-col min-h-screen">
-        <main className="flex-1 safe-top w-full max-w-6xl xl:max-w-7xl mx-auto px-5 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 md:py-8 pb-28 md:pb-10">
-          <Outlet />
-        </main>
-      </div>
+    <div className="h-screen flex flex-col bg-echo-bg overflow-hidden">
+      <main
+        className={`flex-1 safe-top max-w-lg mx-auto w-full px-5 ${noScroll ? 'overflow-hidden' : 'overflow-y-auto'}`}
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 120px)' }}
+      >
+        <Outlet />
+      </main>
       <BottomNav />
     </div>
   );
