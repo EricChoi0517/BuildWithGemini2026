@@ -1,8 +1,32 @@
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, Square, Check, RotateCcw } from 'lucide-react';
 import { useRecorder } from '@/hooks/useRecorder';
 import Waveform from '@/components/Waveform';
 import MoodDot from '@/components/MoodDot';
+
+const PROMPTS = [
+  'Tell me about the best part of your day so far.',
+  'Describe the last thing that made you laugh.',
+  'What\'s been on your mind lately?',
+  'Talk about someone you spoke to recently.',
+  'What does the rest of your week look like?',
+  'Describe a place you\'d like to be right now.',
+  'What\'s something small that happened today?',
+  'Talk about what you had or want for your next meal.',
+  'What\'s something you\'re looking forward to?',
+  'Describe how your morning went.',
+  'If you could call anyone right now, who would it be?',
+  'Talk about something you noticed on your way here.',
+  'What\'s a decision you\'ve been thinking about?',
+  'Describe the weather and how it makes you feel.',
+  'Talk about something you did for the first time recently.',
+  'What\'s a song that\'s been stuck in your head?',
+  'Describe a conversation you had this week.',
+  'What\'s something you wish you had more time for?',
+  'Talk about a memory that came to mind today.',
+  'What would make tomorrow a good day?',
+];
 
 export default function RecordPage() {
   const {
@@ -18,8 +42,15 @@ export default function RecordPage() {
     reset,
   } = useRecorder();
 
+  const [prompt, setPrompt] = useState('');
+
   const progress = elapsed / maxDuration;
   const timeLeft = maxDuration - elapsed;
+
+  function handleStart() {
+    setPrompt(PROMPTS[Math.floor(Math.random() * PROMPTS.length)]);
+    startRecording();
+  }
 
   return (
     <div className="pt-8 pb-4 flex flex-col items-center min-h-[calc(100vh-120px)]">
@@ -40,6 +71,16 @@ export default function RecordPage() {
           <p className="text-echo-text-muted text-sm mt-2">
             Tap the mic to start. 30 seconds max.
           </p>
+        )}
+        {state === 'recording' && prompt && (
+          <motion.p
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="text-echo-accent text-lg mt-3 italic max-w-xs mx-auto"
+          >
+            "{prompt}"
+          </motion.p>
         )}
       </motion.div>
 
@@ -83,7 +124,7 @@ export default function RecordPage() {
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.8, opacity: 0 }}
-                onClick={startRecording}
+                onClick={handleStart}
                 className="w-20 h-20 rounded-full bg-echo-accent flex items-center justify-center shadow-lg shadow-echo-accent/30 hover:bg-echo-accent/90 transition-colors active:scale-95"
               >
                 <Mic size={28} className="text-white" />
