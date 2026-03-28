@@ -88,7 +88,7 @@ export default function HomePage() {
         transition={{ duration: 0.5 }}
       >
         <h1 className="font-display text-3xl text-echo-text text-center">
-          Hello {displayName}
+          Hello, {displayName}!
         </h1>
       </motion.div>
 
