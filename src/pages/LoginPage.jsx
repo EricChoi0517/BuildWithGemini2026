@@ -2,13 +2,16 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
-  const [mode, setMode] = useState('login'); // login | signup
+  const [mode, setMode] = useState('login'); // login | signup | forgot
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
@@ -16,20 +19,41 @@ export default function LoginPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
+    setSuccess('');
+
+    // Confirm password check
+    if (mode === 'signup' && password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       if (mode === 'signup') {
         await signUp(email, password, displayName);
-      } else {
+        navigate('/');
+      } else if (mode === 'login') {
         await signIn(email, password);
+        navigate('/');
+      } else if (mode === 'forgot') {
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (resetError) throw resetError;
+        setSuccess('Check your email for a password reset link.');
       }
-      navigate('/');
     } catch (err) {
       setError(err.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }
+  }
+
+  function switchMode(m) {
+    setMode(m);
+    setError('');
+    setSuccess('');
   }
 
   return (
@@ -52,27 +76,40 @@ export default function LoginPage() {
               <line x1="12" x2="12" y1="19" y2="22" />
             </svg>
           </div>
-          <h1 className="font-display text-3xl text-echo-text">Echo Journal</h1>
+          <h1 className="font-display text-3xl text-echo-text">Lumos</h1>
           <p className="text-echo-text-muted text-sm mt-2">
             30 seconds. Your voice. Your story.
           </p>
         </div>
 
-        {/* Mode Switcher */}
-        <div className="flex bg-echo-surface rounded-xl p-1 mb-6 border border-echo-border">
-          {['login', 'signup'].map((m) => (
-            <button
-              key={m}
-              onClick={() => { setMode(m); setError(''); }}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${mode === m
-                  ? 'bg-echo-accent text-white shadow-lg shadow-echo-accent/20'
-                  : 'text-echo-text-muted hover:text-echo-text'
+        {/* Mode Switcher — only show for login/signup */}
+        {mode !== 'forgot' && (
+          <div className="flex bg-echo-surface rounded-xl p-1 mb-6 border border-echo-border">
+            {['login', 'signup'].map((m) => (
+              <button
+                key={m}
+                onClick={() => switchMode(m)}
+                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  mode === m
+                    ? 'bg-echo-accent text-white shadow-lg shadow-echo-accent/20'
+                    : 'text-echo-text-muted hover:text-echo-text'
                 }`}
-            >
-              {m === 'login' ? 'Log In' : 'Sign Up'}
-            </button>
-          ))}
-        </div>
+              >
+                {m === 'login' ? 'Log In' : 'Sign Up'}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Forgot password heading */}
+        {mode === 'forgot' && (
+          <div className="mb-6">
+            <h2 className="text-echo-text text-lg font-medium">Reset your password</h2>
+            <p className="text-echo-text-muted text-sm mt-1">
+              Enter your email and we'll send you a reset link.
+            </p>
+          </div>
+        )}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -106,15 +143,39 @@ export default function LoginPage() {
             required
           />
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3.5 bg-echo-surface border border-echo-border rounded-xl text-echo-text placeholder:text-echo-text-dim focus:border-echo-accent transition-colors"
-            required
-            minLength={6}
-          />
+          {mode !== 'forgot' && (
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3.5 bg-echo-surface border border-echo-border rounded-xl text-echo-text placeholder:text-echo-text-dim focus:border-echo-accent transition-colors"
+              required
+              minLength={6}
+            />
+          )}
+
+          <AnimatePresence>
+            {mode === 'signup' && (
+              <motion.div
+                key="confirm"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <input
+                  type="password"
+                  placeholder="Confirm password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-3.5 bg-echo-surface border border-echo-border rounded-xl text-echo-text placeholder:text-echo-text-dim focus:border-echo-accent transition-colors"
+                  required={mode === 'signup'}
+                  minLength={6}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {error && (
             <motion.p
@@ -126,6 +187,16 @@ export default function LoginPage() {
             </motion.p>
           )}
 
+          {success && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-echo-green text-sm text-center"
+            >
+              {success}
+            </motion.p>
+          )}
+
           <button
             type="submit"
             disabled={loading}
@@ -134,13 +205,37 @@ export default function LoginPage() {
             {loading ? (
               <span className="inline-flex items-center gap-2">
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                {mode === 'login' ? 'Logging in...' : 'Creating account...'}
+                {mode === 'login' ? 'Logging in...' : mode === 'signup' ? 'Creating account...' : 'Sending...'}
               </span>
             ) : (
-              mode === 'login' ? 'Log In' : 'Create Account'
+              mode === 'login' ? 'Log In' : mode === 'signup' ? 'Create Account' : 'Send Reset Link'
             )}
           </button>
         </form>
+
+        {/* Forgot password link */}
+        {mode === 'login' && (
+          <p className="text-center mt-4">
+            <button
+              onClick={() => switchMode('forgot')}
+              className="text-echo-text-muted text-sm hover:text-echo-accent transition-colors"
+            >
+              Forgot your password?
+            </button>
+          </p>
+        )}
+
+        {/* Back to login from forgot */}
+        {mode === 'forgot' && (
+          <p className="text-center mt-4">
+            <button
+              onClick={() => switchMode('login')}
+              className="text-echo-text-muted text-sm hover:text-echo-accent transition-colors"
+            >
+              Back to log in
+            </button>
+          </p>
+        )}
       </motion.div>
     </div>
   );
