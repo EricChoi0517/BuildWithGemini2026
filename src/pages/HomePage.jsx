@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Mic, ChevronRight, Sparkles } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getEntries, getInsights, getProfile, markInsightRead } from '@/lib/supabase';
-import { latestEntryForDay } from '@/lib/entriesHelpers';
+import { getDayMoodSummary } from '@/lib/entriesHelpers';
 import { ensurePastWeekSummary } from '@/lib/weeklySummary';
 import MoodDot, { getMoodColor } from '@/components/MoodDot';
 import { format, subDays, startOfDay, differenceInHours } from 'date-fns';
@@ -21,7 +21,8 @@ export default function HomePage() {
     async function load() {
       try {
         const [e, i, p] = await Promise.all([
-          getEntries(user.id, { limit: 30 }),
+          // Enough rows to cover 30 calendar days with multiple sessions per day (avoid "missing" older days).
+          getEntries(user.id, { limit: 200 }),
           getInsights(user.id, { unreadOnly: true }),
           getProfile(user.id),
         ]);
@@ -43,15 +44,15 @@ export default function HomePage() {
   const displayName = profile?.display_name || user?.email?.split('@')[0] || '';
   const greeting = getGreeting();
 
-  // Build 30-day mood grid
+  // Build 30-day mood grid — same logic as calendar: average mood per day when multiple sessions exist
   const today = startOfDay(new Date());
   const moodDays = Array.from({ length: 30 }, (_, i) => {
     const date = subDays(today, 29 - i);
-    const entry = latestEntryForDay(entries, date);
+    const summary = getDayMoodSummary(entries, date);
     return {
       date,
-      score: entry?.sentiment_score ?? null,
-      hasEntry: !!entry,
+      score: summary?.avgSentiment ?? null,
+      hasEntry: summary != null && summary.count > 0,
     };
   });
 
@@ -68,7 +69,10 @@ export default function HomePage() {
     }
   }
 
-  const scoreDaysCount = moodDays.filter(d => d.score !== null).length;
+  const scoreDaysCount = moodDays.filter((d) => d.score !== null).length;
+  const entriesWithMoodScore = entries.filter(
+    (e) => typeof e.sentiment_score === 'number' && !Number.isNaN(e.sentiment_score)
+  ).length;
   const recentEntries = entries.slice(0, 5);
 
   if (loading) {
@@ -111,13 +115,17 @@ export default function HomePage() {
               <SentimentGraph data={moodDays} />
             ) : (
               <div className="text-center py-4 space-y-3">
-                <p className="text-echo-text-muted text-xs font-medium italic">
-                  Record {3 - scoreDaysCount} more {3 - scoreDaysCount === 1 ? 'entry' : 'entries'} to unlock your trend.
+                <p className="text-echo-text-muted text-xs font-medium italic max-w-md mx-auto">
+                  {entries.length > 0 && entriesWithMoodScore === 0
+                    ? 'Your saved entries don’t have mood scores yet (often older data). New recordings get scored automatically—keep journaling.'
+                    : scoreDaysCount === 0 && entries.length >= 3
+                      ? 'Spread a few recordings across different days so we can chart mood over time.'
+                      : `Need mood scores on ${3 - scoreDaysCount} more calendar day${3 - scoreDaysCount === 1 ? '' : 's'} (last 30 days) to unlock the line chart.`}
                 </p>
                 <div className="max-w-[120px] mx-auto h-1 bg-echo-border/30 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-echo-accent transition-all duration-1000"
-                    style={{ width: `${(scoreDaysCount / 3) * 100}%` }}
+                    style={{ width: `${Math.min(100, (scoreDaysCount / 3) * 100)}%` }}
                   />
                 </div>
               </div>
