@@ -24,7 +24,7 @@ import {
 import { ensurePastWeekSummary } from '@/lib/weeklySummary';
 import { runPostEntryHeuristics } from '@/lib/insights';
 import MoodDot, { getMoodColor } from '@/components/MoodDot';
-import { format, subDays } from 'date-fns';
+import { format } from 'date-fns';
 
 const INSIGHT_ICONS = {
   emotional_pattern: TrendingUp,
@@ -182,7 +182,10 @@ export default function AnalyticsPage() {
   const allEntities = entries.flatMap((e) => e.entities || []);
   const entityCounts = {};
   for (const entity of allEntities) {
-    entityCounts[entity] = (entityCounts[entity] || 0) + 1;
+    // entities may be strings or objects like {name, type}
+    const name = typeof entity === 'string' ? entity : entity?.name;
+    if (!name || typeof name !== 'string' || name === '[object Object]') continue;
+    entityCounts[name] = (entityCounts[name] || 0) + 1;
   }
   const topEntities = Object.entries(entityCounts)
     .sort((a, b) => b[1] - a[1])
@@ -209,10 +212,8 @@ export default function AnalyticsPage() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 12);
 
-  // Sentiment over time (last 14 days)
-  const last14 = entries
-    .filter((e) => new Date(e.created_at) > subDays(new Date(), 14))
-    .reverse();
+  // Sentiment over time (last 14 entries)
+  const last14 = [...entries].reverse().slice(0, 14);
 
   return (
     <div className="pt-8 pb-4 space-y-6">
@@ -301,7 +302,7 @@ export default function AnalyticsPage() {
           {last14.length > 0 && (
             <div className="p-4 bg-echo-surface border border-echo-border rounded-xl">
               <p className="text-echo-text-dim text-xs uppercase tracking-wider mb-4">
-                Mood · Last 14 Days
+                Mood · Last 14 Entries
               </p>
               <div className="flex items-end gap-1 h-20">
                 {last14.map((entry, i) => {
