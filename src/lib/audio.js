@@ -24,8 +24,9 @@ export async function initAudioRecorder({
     },
   });
 
-  const audioContext = new AudioContext({ sampleRate });
+  const audioContext = new AudioContext(); // use mic's native sample rate
   const source = audioContext.createMediaStreamSource(stream);
+  const nativeRate = audioContext.sampleRate;
   const analyser = audioContext.createAnalyser();
   analyser.fftSize = 2048;
   analyser.smoothingTimeConstant = 0.8;
@@ -45,11 +46,12 @@ export async function initAudioRecorder({
     if (!isRecording) return;
 
     const inputData = event.inputBuffer.getChannelData(0);
-    const samples = new Float32Array(inputData);
-    rawSamples.push(...samples);
+    // Downsample from native rate to target rate (16kHz) for Gemini
+    const downsampled = downsample(inputData, nativeRate, sampleRate);
+    rawSamples.push(...downsampled);
 
     // Convert to 16-bit PCM and base64 for Gemini Live API
-    const pcm16 = float32ToPCM16(samples);
+    const pcm16 = float32ToPCM16(downsampled);
     const base64 = arrayBufferToBase64(pcm16.buffer);
     onAudioChunk?.(base64);
   };
@@ -174,6 +176,17 @@ export function extractAcousticFeatures(samples, sampleRate) {
 }
 
 // ---- Helpers ----
+
+function downsample(buffer, fromRate, toRate) {
+  if (fromRate === toRate) return new Float32Array(buffer);
+  const ratio = fromRate / toRate;
+  const newLength = Math.floor(buffer.length / ratio);
+  const result = new Float32Array(newLength);
+  for (let i = 0; i < newLength; i++) {
+    result[i] = buffer[Math.floor(i * ratio)];
+  }
+  return result;
+}
 
 function float32ToPCM16(float32Array) {
   const pcm16 = new Int16Array(float32Array.length);

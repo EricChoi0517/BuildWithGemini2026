@@ -31,7 +31,7 @@ export default function Waveform({ data, isRecording, className = '' }) {
       ctx.beginPath();
       ctx.moveTo(0, centerY);
       ctx.lineTo(width, centerY);
-      ctx.strokeStyle = isRecording ? '#6C63FF' : '#2A2A3A';
+      ctx.strokeStyle = isRecording ? '#7C6CFF' : '#DDD8F0';
       ctx.lineWidth = 2;
       ctx.stroke();
       return;
@@ -41,12 +41,12 @@ export default function Waveform({ data, isRecording, className = '' }) {
     const sliceWidth = width / data.length;
 
     // Glow effect
-    ctx.shadowColor = '#6C63FF';
+    ctx.shadowColor = '#7C6CFF';
     ctx.shadowBlur = isRecording ? 8 : 0;
 
     ctx.beginPath();
     ctx.lineWidth = 2;
-    ctx.strokeStyle = isRecording ? '#6C63FF' : '#4A4280';
+    ctx.strokeStyle = isRecording ? '#7C6CFF' : '#A498FF';
 
     for (let i = 0; i < data.length; i++) {
       const v = data[i] / 128.0;
@@ -67,7 +67,7 @@ export default function Waveform({ data, isRecording, className = '' }) {
     ctx.beginPath();
     ctx.moveTo(0, centerY);
     ctx.lineTo(width, centerY);
-    ctx.strokeStyle = 'rgba(42, 42, 58, 0.3)';
+    ctx.strokeStyle = 'rgba(221, 216, 240, 0.5)';
     ctx.lineWidth = 1;
     ctx.stroke();
   }, [data, isRecording]);
