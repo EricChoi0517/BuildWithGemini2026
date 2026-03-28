@@ -55,7 +55,7 @@ export default function RecordPage() {
     if (!el) return;
     if (cameraStream) {
       el.srcObject = cameraStream;
-      el.play().catch(() => {});
+      el.play().catch(() => { });
     } else {
       el.srcObject = null;
     }
@@ -76,7 +76,7 @@ export default function RecordPage() {
         animate={{ opacity: 1 }}
         className="text-center mb-8"
       >
-        <h1 className="font-display text-2xl text-echo-text">
+        <h1 className="font-display text-2xl text-echo-text text-center">
           {state === 'idle' && 'Ready to record'}
           {state === 'recording' && 'Listening...'}
           {state === 'processing' && 'Processing...'}
