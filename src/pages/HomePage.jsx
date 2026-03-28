@@ -85,12 +85,11 @@ export default function HomePage() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2"
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
       >
-        <div>
-          <p className="text-echo-text-muted text-sm">{greeting}</p>
-          <h1 className="font-display text-2xl md:text-3xl text-echo-text mt-1">{displayName}</h1>
-        </div>
+        <h1 className="font-display text-2xl md:text-3xl text-echo-text">
+          {greeting} {displayName}!
+        </h1>
         <p className="text-echo-text-dim text-xs md:text-sm max-w-md sm:text-right hidden sm:block">
           Your overview — patterns on the left, latest thoughts on the right.
         </p>

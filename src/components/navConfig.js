@@ -1,9 +1,9 @@
-import { Home, Mic, Calendar, BarChart3, Settings } from 'lucide-react';
+import { Home, Mic, Calendar, BarChart3, User } from 'lucide-react';
 
 export const MAIN_NAV = [
   { to: '/', icon: Home, label: 'Home' },
   { to: '/calendar', icon: Calendar, label: 'Calendar' },
   { to: '/record', icon: Mic, label: 'Record', primary: true },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
-  { to: '/settings', icon: Settings, label: 'Settings' },
+  { to: '/settings', icon: User, label: 'Account' },
 ];

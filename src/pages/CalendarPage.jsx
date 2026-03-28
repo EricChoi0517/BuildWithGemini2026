@@ -67,7 +67,7 @@ export default function CalendarPage() {
         >
           <ChevronLeft size={20} />
         </button>
-        <h1 className="font-display text-xl text-echo-text">
+        <h1 className="font-display text-xl text-echo-text text-center">
           {format(currentMonth, 'MMMM yyyy')}
         </h1>
         <button
@@ -134,7 +134,7 @@ export default function CalendarPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end justify-center"
+            className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end justify-center"
             onClick={() => setSelectedEntry(null)}
           >
             <motion.div
