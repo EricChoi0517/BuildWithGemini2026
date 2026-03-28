@@ -115,6 +115,15 @@ export async function markInsightRead(insightId) {
   if (error) throw error;
 }
 
+export async function dismissInsight(insightId) {
+  const { error } = await supabase
+    .from('insights')
+    .update({ dismissed: true })
+    .eq('id', insightId);
+
+  if (error) throw error;
+}
+
 // ---- Profile Operations ----
 
 export async function getProfile(userId) {
