@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Mic, ChevronRight, Sparkles } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getEntries, getInsights, getProfile } from '@/lib/supabase';
-import MoodDot from '@/components/MoodDot';
+import MoodDot, { getMoodColor } from '@/components/MoodDot';
 import { format, subDays, startOfDay, isSameDay } from 'date-fns';
 
 export default function HomePage() {
@@ -104,20 +104,31 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="space-y-3"
+          className="space-y-8"
         >
-          <h2 className="text-echo-text-muted text-xs font-medium uppercase tracking-wider">
-            Last 30 days
-          </h2>
-          <div className="flex flex-wrap gap-[6px]">
-            {moodDays.map((day, i) => (
-              <MoodDot
-                key={i}
-                score={day.score}
-                size={14}
-                date={day.date}
-              />
-            ))}
+          <div className="space-y-4">
+            <h2 className="text-echo-text-muted text-xs font-medium uppercase tracking-wider">
+              Mood Trend
+            </h2>
+            <div className="bg-echo-surface border border-echo-border rounded-2xl p-4 overflow-hidden">
+              <SentimentGraph data={moodDays} />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h2 className="text-echo-text-muted text-xs font-medium uppercase tracking-wider">
+              Last 30 days
+            </h2>
+            <div className="flex flex-wrap gap-[6px]">
+              {moodDays.map((day, i) => (
+                <MoodDot
+                  key={i}
+                  score={day.score}
+                  size={14}
+                  date={day.date}
+                />
+              ))}
+            </div>
           </div>
         </motion.div>
       )}
@@ -214,15 +225,15 @@ export default function HomePage() {
       {entries.length > 0 && !entries.some((e) =>
         isSameDay(new Date(e.created_at), today)
       ) && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="text-center py-4"
-        >
-          <p className="text-echo-text-dim text-sm">Welcome back.</p>
-        </motion.div>
-      )}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="text-center py-4"
+          >
+            <p className="text-echo-text-dim text-sm">Welcome back.</p>
+          </motion.div>
+        )}
     </div>
   );
 }
@@ -232,4 +243,82 @@ function getGreeting() {
   if (hour < 12) return 'Good morning,';
   if (hour < 17) return 'Good afternoon,';
   return 'Good evening,';
+}
+
+function SentimentGraph({ data }) {
+  const width = 400;
+  const height = 100;
+  const padding = 10;
+  const graphWidth = width - padding * 2;
+  const graphHeight = height - padding * 2;
+
+  // Filter data to only include days with scores
+  const scoreDays = data
+    .map((d, i) => ({ ...d, index: i }))
+    .filter((d) => d.score !== null);
+
+  if (scoreDays.length < 2) {
+    return (
+      <div className="h-full flex items-center justify-center text-echo-text-dim text-xs py-4 italic">
+        Keep recording to see your mood trend.
+      </div>
+    );
+  }
+
+  // Linear scale to map to SVG coordinates
+  const getX = (i) => padding + (i / 29) * graphWidth;
+  const getY = (s) => padding + graphHeight - ((s + 1) / 2) * graphHeight;
+
+  // Build the SVG path
+  const pathData = scoreDays.reduce((acc, point, i) => {
+    const x = getX(point.index);
+    const y = getY(point.score);
+    return i === 0 ? `M ${x} ${y}` : `${acc} L ${x} ${y}`;
+  }, '');
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className="w-full overflow-visible"
+      style={{ filter: 'drop-shadow(0px 2px 4px rgba(124, 108, 255, 0.1))' }}
+    >
+      {/* Reference lines */}
+      <line x1={padding} y1={height / 2} x2={width - padding} y2={height / 2} stroke="currentColor" strokeWidth={1} className="text-echo-border opacity-50" strokeDasharray="4 4" />
+
+      {/* The main mood line */}
+      <path
+        d={pathData}
+        fill="none"
+        stroke="url(#mood-gradient)"
+        strokeWidth={3}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="transition-all duration-700"
+      />
+
+      {/* Points on the line */}
+      {scoreDays.slice(-10).map((point, i) => (
+        <circle
+          key={i}
+          cx={getX(point.index)}
+          cy={getY(point.score)}
+          r={3}
+          fill={getMoodColor(point.score)}
+          className="transition-all duration-300"
+        />
+      ))}
+
+      <defs>
+        <linearGradient id="mood-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          {scoreDays.map((point, i) => (
+            <stop
+              key={i}
+              offset={`${(point.index / 29) * 100}%`}
+              stopColor={getMoodColor(point.score)}
+            />
+          ))}
+        </linearGradient>
+      </defs>
+    </svg>
+  );
 }
