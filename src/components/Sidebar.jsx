@@ -31,14 +31,14 @@ export default function Sidebar() {
               key={to}
               to={to}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-3 rounded-xl font-medium text-sm transition-all ${
+                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                   isActive
-                    ? 'bg-echo-accent text-white shadow-md shadow-echo-accent/25'
-                    : 'bg-echo-accent/90 text-white hover:bg-echo-accent shadow-sm'
+                    ? 'bg-echo-card text-echo-accent border border-echo-border'
+                    : 'text-echo-text-muted hover:text-echo-text hover:bg-echo-card/70 border border-transparent'
                 }`
               }
             >
-              <Icon size={20} />
+              <Icon size={20} className="opacity-90" />
               {label}
             </NavLink>
           ) : (
