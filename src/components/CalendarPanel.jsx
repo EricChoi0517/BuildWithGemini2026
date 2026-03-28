@@ -78,7 +78,7 @@ export default function CalendarPanel() {
         >
           <ChevronLeft size={20} />
         </button>
-        <h2 className="font-display text-lg md:text-xl text-echo-text text-center">
+        <h2 className="font-display text-xl md:text-2xl text-echo-text text-center">
           {format(currentMonth, 'MMMM yyyy')}
         </h2>
         <button
@@ -92,7 +92,7 @@ export default function CalendarPanel() {
 
       <div className="grid grid-cols-7 gap-1 mb-2">
         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-          <div key={i} className="text-center text-echo-text-dim text-sm font-medium py-1">
+          <div key={i} className="text-center text-echo-text-dim text-base font-medium py-1">
             {d}
           </div>
         ))}
@@ -117,13 +117,13 @@ export default function CalendarPanel() {
               onClick={() => summary && setSelectedDay(day)}
               disabled={!summary}
               className={`
-                relative aspect-square flex flex-col items-center justify-center rounded-xl text-sm transition-all duration-200
+                relative aspect-square flex flex-col items-center justify-center rounded-xl text-base transition-all duration-200
                 ${inMonth ? 'text-echo-text' : 'text-echo-text-dim/30'}
                 ${today ? 'ring-1 ring-echo-accent/40' : ''}
                 ${summary ? 'hover:bg-echo-surface cursor-pointer' : 'cursor-default'}
               `}
             >
-              <span className={`text-base ${today ? 'font-semibold text-echo-accent' : ''}`}>
+              <span className={`text-lg ${today ? 'font-semibold text-echo-accent' : ''}`}>
                 {format(day, 'd')}
               </span>
               {summary && dotColor && (
@@ -139,7 +139,7 @@ export default function CalendarPanel() {
       </div>
 
       <div className="text-center">
-        <p className="text-echo-text-dim text-xs">
+        <p className="text-echo-text-dim text-sm">
           {entries.length} {entries.length === 1 ? 'entry' : 'entries'} this month
         </p>
       </div>
