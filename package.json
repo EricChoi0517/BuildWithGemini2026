@@ -10,29 +10,31 @@
     "cap:init": "cap init EchoJournal com.echojournal.app --web-dir dist",
     "cap:add:ios": "cap add ios",
     "cap:sync": "cap sync",
-    "cap:open:ios": "cap open ios"
+    "cap:open:ios": "cap open ios",
+    "seed:demo": "node supabase/seed.mjs"
   },
   "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^6.23.1",
+    "@google/generative-ai": "^0.21.0",
     "@supabase/supabase-js": "^2.43.4",
+    "date-fns": "^3.6.0",
     "framer-motion": "^11.2.10",
     "lucide-react": "^0.383.0",
-    "date-fns": "^3.6.0",
-    "@google/generative-ai": "^0.21.0"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.23.1"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.0",
-    "vite": "^5.2.12",
-    "tailwindcss": "^3.4.4",
-    "postcss": "^8.4.38",
-    "autoprefixer": "^10.4.19",
-    "@capacitor/core": "^6.1.0",
     "@capacitor/cli": "^6.1.0",
-    "@capacitor/ios": "^6.1.0",
-    "@capacitor/status-bar": "^6.0.0",
+    "@capacitor/core": "^6.1.0",
     "@capacitor/haptics": "^6.0.0",
-    "@capacitor/push-notifications": "^6.0.0"
+    "@capacitor/ios": "^6.1.0",
+    "@capacitor/push-notifications": "^6.0.0",
+    "@capacitor/status-bar": "^6.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "autoprefixer": "^10.4.19",
+    "dotenv": "^17.3.1",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.4",
+    "vite": "^5.2.12"
   }
 }
