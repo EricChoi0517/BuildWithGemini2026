@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mic, ChevronRight, Sparkles } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { getEntries, getInsights, getProfile } from '@/lib/supabase';
+import { getEntries, getInsights, getProfile, markInsightRead } from '@/lib/supabase';
+import { latestEntryForDay } from '@/lib/entriesHelpers';
+import { ensurePastWeekSummary } from '@/lib/weeklySummary';
 import MoodDot from '@/components/MoodDot';
-import { format, subDays, startOfDay, isSameDay } from 'date-fns';
+import { format, subDays, startOfDay, differenceInHours } from 'date-fns';
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -26,6 +28,9 @@ export default function HomePage() {
         setEntries(e || []);
         setInsights(i || []);
         setProfile(p);
+        ensurePastWeekSummary(user.id).catch((err) =>
+          console.warn('Weekly summary sync skipped:', err)
+        );
       } catch (err) {
         console.error('Failed to load home data:', err);
       } finally {
@@ -42,13 +47,26 @@ export default function HomePage() {
   const today = startOfDay(new Date());
   const moodDays = Array.from({ length: 30 }, (_, i) => {
     const date = subDays(today, 29 - i);
-    const entry = entries.find((e) => isSameDay(new Date(e.created_at), date));
+    const entry = latestEntryForDay(entries, date);
     return {
       date,
       score: entry?.sentiment_score ?? null,
       hasEntry: !!entry,
     };
   });
+
+  const lastEntry = entries[0];
+  const showWelcomeBack =
+    lastEntry && differenceInHours(new Date(), new Date(lastEntry.created_at)) >= 24;
+
+  async function handleInsightOpen(insight) {
+    try {
+      await markInsightRead(insight.id);
+      setInsights((prev) => prev.filter((x) => x.id !== insight.id));
+    } catch (err) {
+      console.error('Failed to mark insight read:', err);
+    }
+  }
 
   const recentEntries = entries.slice(0, 5);
 
@@ -136,9 +154,11 @@ export default function HomePage() {
           </h2>
           <div className="space-y-2">
             {insights.slice(0, 3).map((insight) => (
-              <div
+              <button
+                type="button"
                 key={insight.id}
-                className="p-4 bg-echo-surface border border-echo-border rounded-xl"
+                onClick={() => handleInsightOpen(insight)}
+                className="w-full text-left p-4 bg-echo-surface border border-echo-border rounded-xl hover:border-echo-accent/30 transition-colors"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -151,7 +171,7 @@ export default function HomePage() {
                     </span>
                   )}
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </motion.div>
@@ -211,9 +231,7 @@ export default function HomePage() {
       )}
 
       {/* Welcome back message if returning after absence */}
-      {entries.length > 0 && !entries.some((e) =>
-        isSameDay(new Date(e.created_at), today)
-      ) && (
+      {showWelcomeBack && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

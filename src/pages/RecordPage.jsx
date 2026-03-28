@@ -1,6 +1,10 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, Square, Check, RotateCcw } from 'lucide-react';
 import { useRecorder } from '@/hooks/useRecorder';
+import { useAuth } from '@/context/AuthContext';
+import { saveJournalFromText } from '@/lib/saveJournalFromText';
 import Waveform from '@/components/Waveform';
 import MoodDot from '@/components/MoodDot';
 
@@ -19,7 +23,6 @@ export default function RecordPage() {
   } = useRecorder();
 
   const progress = elapsed / maxDuration;
-  const timeLeft = maxDuration - elapsed;
 
   return (
     <div className="pt-8 pb-4 flex flex-col items-center min-h-[calc(100vh-120px)]">
@@ -230,7 +233,62 @@ export default function RecordPage() {
           </button>
         </motion.div>
       )}
+
+      {import.meta.env.DEV && !!import.meta.env.VITE_DEV_TYPED_ENTRY && state === 'idle' && (
+        <DevTypedEntry />
+      )}
     </div>
+  );
+}
+
+function DevTypedEntry() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [localError, setLocalError] = useState(null);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!user?.id) {
+      setLocalError('Sign in to save.');
+      return;
+    }
+    setBusy(true);
+    setLocalError(null);
+    try {
+      await saveJournalFromText(user.id, text, 5);
+      setText('');
+      navigate('/');
+    } catch (err) {
+      setLocalError(err.message || 'Save failed');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="w-full max-w-md mt-10 pt-8 border-t border-echo-border space-y-3"
+    >
+      <p className="text-echo-text-dim text-xs uppercase tracking-wider">Dev · typed entry</p>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        rows={3}
+        placeholder="Type a journal entry to test DB + Flash extraction (no mic)."
+        className="w-full bg-echo-card border border-echo-border rounded-xl px-3 py-2 text-sm text-echo-text placeholder:text-echo-text-dim focus:outline-none focus:ring-1 focus:ring-echo-accent resize-y min-h-[80px]"
+      />
+      {localError && <p className="text-echo-red text-xs">{localError}</p>}
+      <button
+        type="submit"
+        disabled={busy || !text.trim()}
+        className="w-full py-2.5 rounded-xl text-sm bg-echo-card border border-echo-border text-echo-text hover:border-echo-accent/50 disabled:opacity-40 disabled:pointer-events-none"
+      >
+        {busy ? 'Saving…' : 'Save typed entry'}
+      </button>
+    </form>
   );
 }
 

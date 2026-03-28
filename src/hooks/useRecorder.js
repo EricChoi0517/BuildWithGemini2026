@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { initAudioRecorder } from '@/lib/audio';
 import { connectLiveAPI, extractInsights } from '@/lib/gemini';
 import { saveEntry } from '@/lib/supabase';
+import { runPostEntryHeuristics } from '@/lib/insights';
 import { useAuth } from '@/context/AuthContext';
 
 const MAX_DURATION = 30; // seconds
@@ -21,6 +22,11 @@ export function useRecorder() {
   const transcriptRef = useRef('');
 
   const startRecording = useCallback(async () => {
+    if (!user?.id) {
+      setError('Sign in to save entries.');
+      setState('error');
+      return;
+    }
     try {
       setState('recording');
       setElapsed(0);
@@ -69,7 +75,7 @@ export function useRecorder() {
       setState('error');
       setError(err.message || 'Microphone access denied');
     }
-  }, []);
+  }, [user?.id]);
 
   const stopRecording = useCallback(async () => {
     if (state !== 'recording') return;
@@ -100,6 +106,12 @@ export function useRecorder() {
       return;
     }
 
+    if (!user?.id) {
+      setState('error');
+      setError('Sign in to save entries.');
+      return;
+    }
+
     try {
       // Run Gemini extraction
       const insights = await extractInsights(finalTranscript, acousticFeatures);
@@ -118,6 +130,9 @@ export function useRecorder() {
 
       setResult(entry);
       setState('done');
+      runPostEntryHeuristics(user.id).catch((e) =>
+        console.warn('Post-entry heuristics skipped:', e)
+      );
     } catch (err) {
       console.error('Save failed:', err);
       setState('error');

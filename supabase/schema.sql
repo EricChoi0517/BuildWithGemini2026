@@ -118,6 +118,10 @@ create table weekly_summaries (
 
 create index idx_weekly_user on weekly_summaries (user_id, week_start desc);
 
+-- One stored summary per user per calendar week (Monday start)
+create unique index if not exists idx_weekly_summaries_user_week
+  on weekly_summaries (user_id, week_start);
+
 -- ============================================
 -- ROW LEVEL SECURITY
 -- Users can only access their own data
@@ -138,6 +142,8 @@ create policy "Users can view own entries"
   on entries for select using (auth.uid() = user_id);
 create policy "Users can insert own entries"
   on entries for insert with check (auth.uid() = user_id);
+create policy "Users can update own entries"
+  on entries for update using (auth.uid() = user_id);
 create policy "Users can delete own entries"
   on entries for delete using (auth.uid() = user_id);
 

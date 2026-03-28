@@ -69,13 +69,16 @@ export async function getEntryCount(userId) {
 
 // ---- Insight Operations ----
 
-export async function getInsights(userId, { unreadOnly = false } = {}) {
+export async function getInsights(userId, { unreadOnly = false, includeDismissed = false } = {}) {
   let query = supabase
     .from('insights')
     .select('*')
     .eq('user_id', userId)
-    .eq('dismissed', false)
     .order('created_at', { ascending: false });
+
+  if (!includeDismissed) {
+    query = query.eq('dismissed', false);
+  }
 
   if (unreadOnly) {
     query = query.eq('is_read', false);
@@ -140,4 +143,24 @@ export async function getWeeklySummaries(userId, limit = 4) {
 
   if (error) throw error;
   return data;
+}
+
+export async function saveWeeklySummary(row) {
+  const { data, error } = await supabase
+    .from('weekly_summaries')
+    .insert(row)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateProfile(userId, { display_name }) {
+  const patch = { updated_at: new Date().toISOString() };
+  if (display_name !== undefined) patch.display_name = display_name;
+
+  const { error } = await supabase.from('profiles').update(patch).eq('id', userId);
+
+  if (error) throw error;
 }

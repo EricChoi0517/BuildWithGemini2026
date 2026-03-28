@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { LogOut, Shield, Clock, Bell, ChevronRight, User } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { getProfile, updateSettings } from '@/lib/supabase';
+import { getProfile, updateSettings, updateProfile } from '@/lib/supabase';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
@@ -14,6 +14,8 @@ export default function SettingsPage() {
     theme: 'dark',
   });
   const [saving, setSaving] = useState(false);
+  const [displayNameDraft, setDisplayNameDraft] = useState('');
+  const [nameSaving, setNameSaving] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -22,6 +24,7 @@ export default function SettingsPage() {
         const p = await getProfile(user.id);
         setProfile(p);
         if (p?.settings) setSettings(p.settings);
+        setDisplayNameDraft(p?.display_name || '');
       } catch (err) {
         console.error('Failed to load profile:', err);
       }
@@ -29,15 +32,30 @@ export default function SettingsPage() {
     load();
   }, [user]);
 
+  async function handleSaveDisplayName() {
+    if (!user) return;
+    const name = displayNameDraft.trim();
+    setNameSaving(true);
+    try {
+      await updateProfile(user.id, { display_name: name || null });
+      setProfile((prev) => (prev ? { ...prev, display_name: name || null } : prev));
+    } catch (err) {
+      console.error('Failed to save display name:', err);
+    } finally {
+      setNameSaving(false);
+    }
+  }
+
   async function handleToggle(key) {
-    const updated = { ...settings, [key]: !settings[key] };
+    const prev = { ...settings };
+    const updated = { ...prev, [key]: !prev[key] };
     setSettings(updated);
     setSaving(true);
     try {
       await updateSettings(user.id, updated);
     } catch (err) {
       console.error('Failed to save settings:', err);
-      setSettings(settings); // revert
+      setSettings(prev);
     } finally {
       setSaving(false);
     }
@@ -59,19 +77,32 @@ export default function SettingsPage() {
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="p-4 bg-echo-surface border border-echo-border rounded-xl"
+        className="p-4 bg-echo-surface border border-echo-border rounded-xl space-y-3"
       >
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-echo-accent/10 border border-echo-accent/20 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-echo-accent/10 border border-echo-accent/20 flex items-center justify-center shrink-0">
             <User size={20} className="text-echo-accent" />
           </div>
-          <div>
-            <p className="text-echo-text font-medium">
-              {profile?.display_name || 'User'}
-            </p>
-            <p className="text-echo-text-dim text-xs">{user?.email}</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-echo-text-dim text-xs mb-1">Display name</p>
+            <input
+              type="text"
+              value={displayNameDraft}
+              onChange={(e) => setDisplayNameDraft(e.target.value)}
+              placeholder={user?.email?.split('@')[0] || 'Your name'}
+              className="w-full bg-echo-card border border-echo-border rounded-lg px-3 py-2 text-echo-text text-sm placeholder:text-echo-text-dim focus:outline-none focus:ring-1 focus:ring-echo-accent"
+            />
+            <p className="text-echo-text-dim text-xs mt-2 truncate">{user?.email}</p>
           </div>
         </div>
+        <button
+          type="button"
+          onClick={handleSaveDisplayName}
+          disabled={nameSaving || displayNameDraft.trim() === (profile?.display_name || '').trim()}
+          className="w-full py-2.5 rounded-xl text-sm font-medium bg-echo-accent text-white disabled:opacity-40 disabled:pointer-events-none"
+        >
+          {nameSaving ? 'Saving…' : 'Save name'}
+        </button>
       </motion.div>
 
       {/* Recording Settings */}

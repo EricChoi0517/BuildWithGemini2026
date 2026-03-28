@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getEntriesByDateRange } from '@/lib/supabase';
+import { latestEntryForDay } from '@/lib/entriesHelpers';
 import MoodDot, { getMoodColor } from '@/components/MoodDot';
 import {
   format,
@@ -14,7 +15,6 @@ import {
   subMonths,
   eachDayOfInterval,
   isSameMonth,
-  isSameDay,
   isToday,
 } from 'date-fns';
 
@@ -54,7 +54,7 @@ export default function CalendarPage() {
   const days = eachDayOfInterval({ start: calStart, end: calEnd });
 
   function getEntryForDay(day) {
-    return entries.find((e) => isSameDay(new Date(e.created_at), day));
+    return latestEntryForDay(entries, day);
   }
 
   return (

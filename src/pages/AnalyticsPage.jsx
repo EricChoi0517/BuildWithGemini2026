@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Sparkles, Users, TrendingUp, MessageCircle, Clock } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getEntries, getInsights, getWeeklySummaries } from '@/lib/supabase';
+import { ensurePastWeekSummary } from '@/lib/weeklySummary';
 import MoodDot, { getMoodColor } from '@/components/MoodDot';
 import { format, subDays } from 'date-fns';
 
@@ -28,11 +29,14 @@ export default function AnalyticsPage() {
     if (!user) return;
     async function load() {
       try {
-        const [e, i, s] = await Promise.all([
+        const [e, i] = await Promise.all([
           getEntries(user.id, { limit: 60 }),
           getInsights(user.id),
-          getWeeklySummaries(user.id),
         ]);
+        await ensurePastWeekSummary(user.id).catch((err) =>
+          console.warn('Weekly summary sync skipped:', err)
+        );
+        const s = await getWeeklySummaries(user.id);
         setEntries(e || []);
         setInsights(i || []);
         setSummaries(s || []);
