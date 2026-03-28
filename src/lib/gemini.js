@@ -754,7 +754,7 @@ Acoustic hints (microphone, not judgmental):
 Rules:
 - sentiment_label: pick the BEST fit from this list (snake_case): positive, neutral, negative, mixed, conflicted, bittersweet, hyperbolic_or_performative, subdued, anxious, flat, guarded, hopeful, heavy, warm, numb, disengaged.
 - sentiment_score: -1.0 to 1.0; when delivery contradicts content, keep score moderate unless words are clearly celebratory or clearly devastating.
-- emotion_percentages: REQUIRED (object). Provide a JSON object mapping percentage probabilities for basic emotions (Happiness, Sadness, Anger, Fear, Surprise, Disgust) that sum strictly to 100.
+- emotion_percentages: REQUIRED (object). Provide a JSON object mapping percentage probabilities for basic emotions (Happiness, Sadness, Anger, Fear, Surprise, Disgust) that sum strictly to 100. Always provide non-zero values for at least 3 categories to reflect human emotional complexity.
 - prompt_adherence: If a journal prompt was given above, one concise sentence on how their speech relates to it; if none was given, null.
 - speaking_tone: REQUIRED (string). A comma-separated list of 3-5 descriptive adjectives summarizing their tone and delivery (e.g., "calm, measured, slightly hesitant"). Do NOT use full sentences.
 - summary: one neutral sentence on what they shared (what they actually talked about, not the prompt text unless they engaged it).
@@ -768,7 +768,7 @@ Rules:
   "keywords": [],
   "speaking_tone": "<required>",
   "facial_affect_summary": ${hasFaces ? '<string or null>' : 'null'},
-  "emotion_percentages": { "Happiness": 80, "Sadness": 20 },
+  "emotion_percentages": { "Happiness": 60, "Sadness": 30, "Surprise": 10 },
   "prompt_adherence": ${journalPrompt ? '"<one sentence>"' : 'null'},
   "unresolved_threads": [],
   "summary": "<required string>"
