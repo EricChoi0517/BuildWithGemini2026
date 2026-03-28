@@ -53,6 +53,7 @@ export default function CalendarPanel() {
   const calStart = startOfWeek(monthStart);
   const calEnd = endOfWeek(endOfMonth(currentMonth));
   const days = eachDayOfInterval({ start: calStart, end: calEnd });
+  const weekRows = Math.ceil(days.length / 7);
 
   function dotColorForSummary(summary) {
     if (!summary) return null;
@@ -98,7 +99,10 @@ export default function CalendarPanel() {
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-0.5">
+      <div
+        className="grid grid-cols-7 gap-0.5"
+        style={{ minHeight: '55vh', gridTemplateRows: `repeat(${weekRows}, 1fr)` }}
+      >
         {days.map((day, i) => {
           const summary = getDayMoodSummary(entries, day);
           const inMonth = isSameMonth(day, currentMonth);
@@ -117,7 +121,7 @@ export default function CalendarPanel() {
               onClick={() => summary && setSelectedDay(day)}
               disabled={!summary}
               className={`
-                relative h-11 flex flex-col items-center justify-center rounded-lg text-base transition-all duration-200
+                relative flex flex-col items-center justify-center rounded-lg text-base transition-all duration-200
                 ${inMonth ? 'text-echo-text' : 'text-echo-text-dim/30'}
                 ${today ? 'ring-1 ring-echo-accent/40' : ''}
                 ${summary ? 'hover:bg-echo-surface cursor-pointer' : 'cursor-default'}
@@ -128,7 +132,7 @@ export default function CalendarPanel() {
               </span>
               {summary && dotColor && (
                 <div
-                  className="w-1.5 h-1.5 rounded-full mt-px"
+                  className="w-2 h-2 rounded-full mt-0.5"
                   style={{ backgroundColor: dotColor }}
                   aria-hidden
                 />
