@@ -54,12 +54,12 @@ function normalizeLiveModelId(raw) {
 // See https://ai.google.dev/gemini-api/docs/live-guide
 const GEMINI_LIVE_MODEL =
   normalizeLiveModelId(import.meta.env.VITE_GEMINI_LIVE_MODEL) ||
-  'gemini-1.5-flash';
+  'gemini-3.1-flash-live-preview';
 
 /** Flash model for REST extraction (Live uses a different model). */
 const GEMINI_EXTRACT_MODEL =
   normalizeLiveModelId(import.meta.env.VITE_GEMINI_EXTRACT_MODEL) ||
-  'gemini-1.5-flash';
+  'gemini-2.5-flash';
 
 // Official Live API WebSocket (v1beta). See https://ai.google.dev/api/live
 function liveWsUrl() {
