@@ -69,7 +69,7 @@ export default function CalendarPanel() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
         <button
           type="button"
@@ -90,7 +90,7 @@ export default function CalendarPanel() {
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 mb-2">
+      <div className="grid grid-cols-7 gap-0.5 mb-1">
         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
           <div key={i} className="text-center text-echo-text-dim text-base font-medium py-1">
             {d}
@@ -98,7 +98,7 @@ export default function CalendarPanel() {
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-0.5">
         {days.map((day, i) => {
           const summary = getDayMoodSummary(entries, day);
           const inMonth = isSameMonth(day, currentMonth);
@@ -117,7 +117,7 @@ export default function CalendarPanel() {
               onClick={() => summary && setSelectedDay(day)}
               disabled={!summary}
               className={`
-                relative aspect-square flex flex-col items-center justify-center rounded-xl text-base transition-all duration-200
+                relative h-11 flex flex-col items-center justify-center rounded-lg text-base transition-all duration-200
                 ${inMonth ? 'text-echo-text' : 'text-echo-text-dim/30'}
                 ${today ? 'ring-1 ring-echo-accent/40' : ''}
                 ${summary ? 'hover:bg-echo-surface cursor-pointer' : 'cursor-default'}
@@ -128,7 +128,7 @@ export default function CalendarPanel() {
               </span>
               {summary && dotColor && (
                 <div
-                  className="w-2 h-2 rounded-full mt-0.5"
+                  className="w-1.5 h-1.5 rounded-full mt-px"
                   style={{ backgroundColor: dotColor }}
                   aria-hidden
                 />
