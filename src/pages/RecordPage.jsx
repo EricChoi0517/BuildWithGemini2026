@@ -64,8 +64,9 @@ export default function RecordPage() {
   const progress = elapsed / maxDuration;
 
   function handleStart() {
-    setPrompt(PROMPTS[Math.floor(Math.random() * PROMPTS.length)]);
-    startRecording();
+    const p = PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
+    setPrompt(p);
+    startRecording({ journalPrompt: p });
   }
 
   return (
@@ -87,6 +88,9 @@ export default function RecordPage() {
           <div className="mt-3 space-y-2 max-w-sm mx-auto">
             <p className="text-echo-text-muted text-sm">
               Tap the mic to start. 30 seconds max.
+            </p>
+            <p className="text-echo-text-dim text-xs max-w-sm mx-auto">
+              The prompt is optional—go off-topic if you want. We note when speech doesn&apos;t match the prompt so insights stay honest.
             </p>
             <label className="flex items-start gap-3 cursor-pointer text-left px-1">
               <input

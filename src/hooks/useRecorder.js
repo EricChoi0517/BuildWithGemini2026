@@ -27,6 +27,7 @@ export function useRecorder({ useWebcam = false } = {}) {
   const liveApiRef = useRef(null);
   const timerRef = useRef(null);
   const transcriptRef = useRef('');
+  const journalPromptRef = useRef('');
   const faceSamplerRef = useRef(null);
   const recordingStreamRef = useRef(null);
   const useWebcamRef = useRef(useWebcam);
@@ -36,12 +37,15 @@ export function useRecorder({ useWebcam = false } = {}) {
     useWebcamRef.current = useWebcam;
   }, [useWebcam]);
 
-  const startRecording = useCallback(async () => {
+  const startRecording = useCallback(async (opts = {}) => {
     if (!user?.id) {
       setError('Sign in to save entries.');
       setState('error');
       return;
     }
+    const jp =
+      typeof opts.journalPrompt === 'string' ? opts.journalPrompt.trim() : '';
+    journalPromptRef.current = jp;
     try {
       setState('recording');
       setElapsed(0);
@@ -188,6 +192,10 @@ export function useRecorder({ useWebcam = false } = {}) {
       return;
     }
 
+    const sessionPrompt = journalPromptRef.current;
+    const wordCount = finalTranscript.trim().split(/\s+/).filter(Boolean).length;
+    const transcriptVeryShort = wordCount < 10;
+
     try {
       let recentEntries = [];
       try {
@@ -199,6 +207,8 @@ export function useRecorder({ useWebcam = false } = {}) {
       const insights = await extractInsights(finalTranscript, acousticFeatures, {
         faceImageBase64s: faceSnapshots,
         recentEntries,
+        journalPrompt: sessionPrompt || undefined,
+        transcriptVeryShort,
       });
 
       const entry = await saveEntry({
@@ -249,6 +259,7 @@ export function useRecorder({ useWebcam = false } = {}) {
     setTranscript('');
     setResult(null);
     setError(null);
+    journalPromptRef.current = '';
   }, []);
 
   return {
