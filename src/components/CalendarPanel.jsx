@@ -92,7 +92,7 @@ export default function CalendarPanel() {
 
       <div className="grid grid-cols-7 gap-1 mb-2">
         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-          <div key={i} className="text-center text-echo-text-dim text-xs font-medium py-1">
+          <div key={i} className="text-center text-echo-text-dim text-sm font-medium py-1">
             {d}
           </div>
         ))}
@@ -123,7 +123,7 @@ export default function CalendarPanel() {
                 ${summary ? 'hover:bg-echo-surface cursor-pointer' : 'cursor-default'}
               `}
             >
-              <span className={`text-xs ${today ? 'font-semibold text-echo-accent' : ''}`}>
+              <span className={`text-base ${today ? 'font-semibold text-echo-accent' : ''}`}>
                 {format(day, 'd')}
               </span>
               {summary && dotColor && (
