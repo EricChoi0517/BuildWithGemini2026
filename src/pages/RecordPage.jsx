@@ -265,7 +265,7 @@ export default function RecordPage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="w-full mt-6 space-y-4"
+          className="w-full mt-6 space-y-4 max-h-[calc(100vh-22rem)] overflow-y-auto pr-1"
         >
           {/* Transcript */}
           <div className="p-4 bg-echo-surface border border-echo-border rounded-xl">
