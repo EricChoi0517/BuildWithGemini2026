@@ -328,6 +328,9 @@ function heuristicExtractionFromAudio(transcript, acoustic = {}, recentEntries =
       : 'Journal entry captured.';
   const promptNote = heuristicJournalPromptNote(t, journalPrompt);
   const mergedCtx = [emotion_notes.trim(), promptNote].filter(Boolean).join(' ') || null;
+  const dummyHappiness = score > 0 ? Math.round(score * 100) : 0;
+  const dummySadness = score < 0 ? Math.round(Math.abs(score) * 100) : 0;
+  const dummyNeutral = 100 - (dummyHappiness + dummySadness);
   return normalizeEntryExtraction({
     sentiment_score: Math.round(score * 100) / 100,
     sentiment_label: normalizeMoodLabel(label),
@@ -338,7 +341,7 @@ function heuristicExtractionFromAudio(transcript, acoustic = {}, recentEntries =
     keywords: [],
     unresolved_threads: [],
     facial_affect_summary: null,
-    emotion_context_notes: mergedCtx,
+    emotion_context_notes: JSON.stringify({ Happiness: dummyHappiness, Sadness: dummySadness, Neutral: dummyNeutral }),
   });
 }
 
@@ -361,22 +364,11 @@ function enrichExtractionOutput(result, transcript, acoustic, recentEntries = []
       out = { ...out, emotion_context_notes: h.emotion_context_notes };
     }
   }
-  if (!out.emotion_context_notes?.trim() && recentEntries.length === 0) {
+  if (!out.emotion_context_notes?.trim()) {
     out = {
       ...out,
-      emotion_context_notes: 'No earlier entries in context—this recording stands alone.',
+      emotion_context_notes: JSON.stringify({ Neutral: 100 }),
     };
-  }
-  if (journalPrompt) {
-    const hn = heuristicJournalPromptNote((transcript || '').trim(), journalPrompt);
-    if (hn && !(out.emotion_context_notes || '').includes(hn)) {
-      out = {
-        ...out,
-        emotion_context_notes: out.emotion_context_notes
-          ? `${out.emotion_context_notes} ${hn}`
-          : hn,
-      };
-    }
   }
   return out;
 }
@@ -676,11 +668,6 @@ export function normalizeEntryExtraction(raw) {
     String(padhRaw).trim().toLowerCase() !== 'null'
       ? String(padhRaw).trim().slice(0, 450)
       : null;
-  if (padh) {
-    emotion_context_notes = emotion_context_notes
-      ? `${emotion_context_notes} ${padh}`
-      : padh;
-  }
 
   return {
     sentiment_score: coerceNumber(raw.sentiment_score),
@@ -760,7 +747,7 @@ Acoustic hints (microphone, not judgmental):
 Rules:
 - sentiment_label: pick the BEST fit from this list (snake_case): positive, neutral, negative, mixed, conflicted, bittersweet, hyperbolic_or_performative, subdued, anxious, flat, guarded, hopeful, heavy, warm, numb, disengaged.
 - sentiment_score: -1.0 to 1.0; when delivery contradicts content, keep score moderate unless words are clearly celebratory or clearly devastating.
-- emotion_context_notes: REQUIRED (string, can be short). Mention (1) any mismatch: hyper tone vs sad words, cheerful face vs heavy words, flat voice vs upbeat words; (2) if prior sessions are listed, how THIS entry compares (warmer/colder, more guarded, energy shift, recurring theme). If no priors, say "First entries—no prior comparison." or similar.
+- emotion_context_notes: REQUIRED (string). Provide a stringified JSON object representing percentage probabilities for basic emotions (Happiness, Sadness, Anger, Fear, Surprise, Disgust) that sum to exactly 100. Format strictly as a valid JSON string (e.g. "{\\"Happiness\\": 80, \\"Sadness\\": 0, \\"Anger\\": 0, \\"Fear\\": 20, \\"Surprise\\": 0, \\"Disgust\\": 0}"). Do not include other explanatory text.
 - prompt_adherence: If a journal prompt was given above, one concise sentence on how their speech relates to it; if none was given, null.
 - speaking_tone: how they sound + how it relates to words (and face if any).
 - summary: one neutral sentence on what they shared (what they actually talked about, not the prompt text unless they engaged it).
@@ -774,7 +761,7 @@ Rules:
   "keywords": [],
   "speaking_tone": "<required>",
   "facial_affect_summary": ${hasFaces ? '<string or null>' : 'null'},
-  "emotion_context_notes": "<required string>",
+  "emotion_context_notes": "<required stringified json object>",
   "prompt_adherence": ${journalPrompt ? '"<one sentence>"' : 'null'},
   "unresolved_threads": [],
   "summary": "<required string>"

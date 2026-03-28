@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { saveJournalFromText } from '@/lib/saveJournalFromText';
 import Waveform from '@/components/Waveform';
 import MoodDot, { formatMoodLabel } from '@/components/MoodDot';
+import EmotionBars from '@/components/EmotionBars';
 
 const PROMPTS = [
   'Tell me about the best part of your day so far.',
@@ -304,12 +305,7 @@ export default function RecordPage() {
               </p>
             )}
             {result.emotion_context_notes && (
-              <p className="text-echo-text-dim text-xs mt-3 leading-relaxed border-l-2 border-echo-accent/25 pl-3">
-                <span className="text-echo-text-muted uppercase tracking-wider text-[10px] block mb-1">
-                  Context & changes
-                </span>
-                {result.emotion_context_notes}
-              </p>
+              <EmotionBars data={result.emotion_context_notes} />
             )}
             {result.keywords?.length > 0 && (
               <div className="mt-3">
