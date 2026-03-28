@@ -56,7 +56,7 @@ export default function RecordPage() {
     if (!el) return;
     if (cameraStream) {
       el.srcObject = cameraStream;
-      el.play().catch(() => { });
+      el.play().catch(() => {});
     } else {
       el.srcObject = null;
     }

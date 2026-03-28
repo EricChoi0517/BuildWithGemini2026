@@ -42,7 +42,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-echo-bg flex flex-col items-center justify-center px-6">
+    <div className="relative min-h-screen bg-echo-bg flex flex-col items-center justify-center px-6 overflow-hidden">
       {/* Background glow */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-echo-accent/5 rounded-full blur-[120px] pointer-events-none" />
 
@@ -54,8 +54,8 @@ export default function LoginPage() {
       >
         {/* Logo / Brand */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-echo-accent/10 border border-echo-accent/20 mb-4">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7C6CFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-echo-accent/10 border border-echo-accent/20 mb-4 text-echo-accent">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
               <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
               <line x1="12" x2="12" y1="19" y2="22" />
@@ -66,6 +66,15 @@ export default function LoginPage() {
             30 seconds. Your voice. Your story.
           </p>
         </div>
+
+        {mode === 'reset' && (
+          <div className="mb-6 text-center">
+            <h2 className="text-echo-text text-lg font-medium">Reset your password</h2>
+            <p className="text-echo-text-muted text-sm mt-1">
+              Enter your email and we&apos;ll send you a link to choose a new password.
+            </p>
+          </div>
+        )}
 
         {/* Mode Switcher */}
         {mode !== 'reset' && (

@@ -108,7 +108,7 @@ export default function SettingsPage() {
 
   return (
     <div className="pt-8 pb-4 space-y-6">
-      <h1 className="font-display text-2xl text-echo-text text-center">Settings</h1>
+      <h1 className="font-display text-2xl text-echo-text md:text-left text-center">Account</h1>
 
       {/* Profile */}
       <motion.div
