@@ -24,7 +24,7 @@
     "react-router-dom": "^6.23.1"
   },
   "devDependencies": {
-    "@capacitor/cli": "^6.1.0",
+    "@capacitor/cli": "^8.3.0",
     "@capacitor/core": "^6.1.0",
     "@capacitor/haptics": "^6.0.0",
     "@capacitor/ios": "^6.1.0",
@@ -36,6 +36,6 @@
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.4",
     "typescript": "^6.0.2",
-    "vite": "^5.2.12"
+    "vite": "^8.0.3"
   }
 }
